@@ -1,22 +1,25 @@
-import type { Asistencia, Empleado, EmpleadoDetalle } from './types'
+import { pedirJson } from '@/lib/api'
+import type { Asistencia, Calendario, Empleado, EmpleadoDetalle } from './types'
 
-function apiUrl(ruta: string): string {
-  const base = import.meta.env.VITE_API_URL
-  if (!base) throw new Error('Falta VITE_API_URL (URL del backend) en el .env o en las variables de Vercel')
-  return `${base.replace(/\/$/, '')}${ruta}`
+export function getAsistencias(): Promise<Asistencia[]> {
+  return pedirJson('/api/asistencias')
 }
 
-export async function getAsistencias(): Promise<Asistencia[]> {
-  const res = await fetch(apiUrl('/api/asistencias'))
-  return res.json()
+export function getEmpleados(): Promise<Empleado[]> {
+  return pedirJson('/api/empleados')
 }
 
-export async function getEmpleados(): Promise<Empleado[]> {
-  const res = await fetch(apiUrl('/api/empleados'))
-  return res.json()
+export function getDetalles(uuid: string): Promise<EmpleadoDetalle> {
+  return pedirJson(`/api/empleados/${uuid}`)
 }
 
-export async function getDetalles(uuid: string): Promise<EmpleadoDetalle> {
-  const res = await fetch(apiUrl(`/api/empleados/${uuid}`))
-  return res.json()
+/** Estado de cada día (máx. 31). Sin `desde` el backend usa hoy; los días futuros no se devuelven. */
+export function getCalendario(filtro: { desde?: string; hasta?: string; uuid?: string } = {}): Promise<Calendario> {
+  const params = new URLSearchParams(Object.entries(filtro).filter((par): par is [string, string] => Boolean(par[1])))
+  return pedirJson(`/api/calendario?${params}`)
+}
+
+/** Requiere el permiso `justificar_faltas` (rol Admin Administracion). */
+export function justificarFalta(uuid: string, fecha: string, justificada: boolean): Promise<unknown> {
+  return pedirJson('/api/faltas/justificar', { method: 'POST', body: { uuid, fecha, justificada } })
 }

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronRightIcon, GalleryHorizontalIcon, TableIcon, UsersIcon } from 'lucide-react'
-import { getDetalles, getEmpleados } from './api'
-import type { Empleado, EmpleadoDetalle } from './types'
-import CalendarioAsistencias from './CalendarioAsistencias'
+import { ChevronRightIcon, UsersIcon } from 'lucide-react'
+import { cn } from 'cn'
+import { getCalendario, getDetalles, getEmpleados } from './api'
+import type { Empleado, EstadoDia } from './types'
+import DescargarReporte from './DescargarReporte'
+import { AvatarEmpleado, EstadoBadge, EstatusBadge } from './componentes'
+import { ESTADOS } from './estados'
 import {
   Table,
   TableBody,
@@ -12,98 +15,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  type CarouselApi,
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type Vista = 'tabla' | 'carrusel'
-
-/**
- * Tamaño de cada día para que el calendario llene la tarjeta sin desbordarla.
- * Alto: 100svh menos lo que ocupan header, título, tarjeta y contador (~24rem), entre 7 filas.
- * Ancho: el de la tarjeta (100cqw) menos la columna de leyenda (~18rem), entre 7 columnas.
- */
-const CELDA_CARRUSEL = 'clamp(2.75rem, min(calc((100svh - 24rem) / 7), calc((100cqw - 18rem) / 7)), 7rem)'
-
-function EstatusBadge({ activo }: { activo: boolean }) {
-    return activo ? (
-        <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">Activo</Badge>
-    ) : (
-        <Badge variant="secondary">Inactivo</Badge>
-    )
-}
-
-/**
- * Una tarjeta del carrusel. Pide su detalle solo cuando `cargar` se vuelve true
- * (la tarjeta visible y sus vecinas), para no disparar una petición por empleado al abrir.
- */
-function SlideEmpleado({ empleado, cargar }: { empleado: Empleado; cargar: boolean }) {
-    const [detalle, setDetalle] = useState<EmpleadoDetalle | null>(null)
-    const [error, setError] = useState(false)
-    const pedido = detalle !== null || error
-
-    useEffect(() => {
-        if (!cargar || pedido) return
-
-        getDetalles(empleado.Uuid)
-            .then((data) => setDetalle(data))
-            .catch((err) => {
-                console.error('Error al obtener el empleado:', err)
-                setError(true)
-            })
-    }, [cargar, pedido, empleado.Uuid])
-
-    return (
-        <Card className="h-full">
-            <CardHeader>
-                <CardTitle className="text-xl">{empleado.Nombre}</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                    {empleado.Area}
-                    <EstatusBadge activo={empleado.Activo} />
-                </CardDescription>
-                <CardAction>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        nativeButton={false}
-                        render={<Link to={`/asistencias/${empleado.Uuid}`} />}
-                    >
-                        Ver detalle y faltas
-                        <ChevronRightIcon data-icon="inline-end" />
-                    </Button>
-                </CardAction>
-            </CardHeader>
-            {/* @container: el calendario mide su ancho contra la tarjeta, no contra la ventana. */}
-            <CardContent className="@container flex-1">
-                {error ? (
-                    <p className="text-muted-foreground text-sm">No se pudieron cargar las asistencias.</p>
-                ) : !detalle ? (
-                    <p className="text-muted-foreground text-sm">Cargando asistencias...</p>
-                ) : (
-                    <CalendarioAsistencias asistencias={detalle.Asistencias} tamanoCelda={CELDA_CARRUSEL} />
-                )}
-            </CardContent>
-        </Card>
-    )
-}
+const RESUMEN_HOY: EstadoDia[] = ['asistio', 'sin_salida', 'sin_entrada', 'pendiente']
 
 function AsistenciasHome() {
     const [empleados, setEmpleados] = useState<Empleado[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(false)
-    const [vista, setVista] = useState<Vista>('tabla')
-    const [api, setApi] = useState<CarouselApi>()
-    const [actual, setActual] = useState(0)
+    const [estadoHoy, setEstadoHoy] = useState<Map<string, EstadoDia> | null>(null)
+
+    useEffect(() => {
+        // Es complementario: si falla, la lista se muestra igual, solo sin el estado de hoy.
+        getCalendario()
+            .then((c) => setEstadoHoy(new Map(c.empleados.flatMap((e) => (e.dias[0] ? [[e.Uuid, e.dias[0].estado] as const] : [])))))
+            .catch((err) => console.error('Error al obtener el estado de hoy:', err))
+    }, [])
 
     const navigate = useNavigate()
 
@@ -119,6 +47,9 @@ function AsistenciasHome() {
 
     useEffect(pedirEmpleados, [pedirEmpleados])
 
+    // El endpoint general no trae nombre ni motivo, así que el reporte se arma con el detalle de cada empleado.
+    const obtenerDetallesReporte = () => Promise.all(empleados.map((e) => getDetalles(e.Uuid)))
+
     const reintentar = () => {
         setLoading(true)
         setError(false)
@@ -131,41 +62,37 @@ function AsistenciasHome() {
         [empleados],
     )
 
-    useEffect(() => {
-        if (!api) return
-        const alSeleccionar = () => setActual(api.selectedScrollSnap())
-        alSeleccionar()
-        api.on('select', alSeleccionar)
-        return () => {
-            api.off('select', alSeleccionar)
-        }
-    }, [api])
-
     return (
         <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold">Empleados</h1>
-                    
-                </div>
+                <h1 className="text-2xl font-semibold">Empleados</h1>
 
-                <ToggleGroup
-                    variant="outline"
-                    size="sm"
-                    spacing={0}
-                    value={[vista]}
-                    onValueChange={(valor) => valor[0] && setVista(valor[0] as Vista)}
-                >
-                    <ToggleGroupItem value="tabla" aria-label="Vista de tabla">
-                        <TableIcon />
-                        Tabla
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="carrusel" aria-label="Vista de carrusel">
-                        <GalleryHorizontalIcon />
-                        Carrusel
-                    </ToggleGroupItem>
-                </ToggleGroup>
+                <DescargarReporte
+                    titulo="Reporte mensual de asistencias"
+                    archivo="asistencias"
+                    obtenerDetalles={obtenerDetallesReporte}
+                />
             </div>
+
+            {estadoHoy && (
+                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {RESUMEN_HOY.map((estado) => {
+                        const estilo = ESTADOS[estado]
+                        const total = [...estadoHoy.values()].filter((e) => e === estado).length
+                        return (
+                            <div key={estado} className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-xs">
+                                <span className={cn('flex size-10 items-center justify-center rounded-lg', estilo.badge)}>
+                                    <estilo.icono className="size-5" />
+                                </span>
+                                <div>
+                                    <p className="text-2xl font-semibold tabular-nums">{total}</p>
+                                    <p className="text-muted-foreground text-xs">{estilo.etiqueta} hoy</p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </section>
+            )}
 
             {loading ? (
                 <div className="space-y-3 rounded-lg border p-4">
@@ -190,14 +117,15 @@ function AsistenciasHome() {
                     </div>
                     <p className="font-medium">Todavía no hay empleados registrados</p>
                 </div>
-            ) : vista === 'tabla' ? (
-                <div className="rounded-lg border">
+            ) : (
+                <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-muted/50">
                             <TableRow>
                                 <TableHead className="pl-4">Nombre</TableHead>
                                 <TableHead>Área</TableHead>
                                 <TableHead>Estatus</TableHead>
+                                <TableHead>Hoy</TableHead>
                                 <TableHead className="w-0 pr-4">
                                     <span className="sr-only">Abrir</span>
                                 </TableHead>
@@ -212,13 +140,23 @@ function AsistenciasHome() {
                                     onClick={() => navigate(`/asistencias/${a.Uuid}`)}
                                 >
                                     <TableCell className="py-3 pl-4 font-medium">
-                                        <Link to={`/asistencias/${a.Uuid}`} className="group-hover:underline">
-                                            {a.Nombre}
-                                        </Link>
+                                        <div className="flex items-center gap-3">
+                                            <AvatarEmpleado nombre={a.Nombre} />
+                                            <Link to={`/asistencias/${a.Uuid}`} className="group-hover:underline">
+                                                {a.Nombre}
+                                            </Link>
+                                        </div>
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground">{a.Area}</TableCell>
+                                    <TableCell className="text-muted-foreground">{a.Area?.trim()}</TableCell>
                                     <TableCell>
                                         <EstatusBadge activo={a.Activo} />
+                                    </TableCell>
+                                    <TableCell>
+                                        {estadoHoy?.get(a.Uuid) ? (
+                                            <EstadoBadge estado={estadoHoy.get(a.Uuid)!} />
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className="pr-4">
                                         <span className="text-muted-foreground group-hover:text-foreground flex items-center justify-end gap-1 text-sm whitespace-nowrap">
@@ -230,27 +168,6 @@ function AsistenciasHome() {
                             ))}
                         </TableBody>
                     </Table>
-                </div>
-            ) : (
-                // flex-1 en cadena hasta la tarjeta para que el carrusel llene el alto restante de la pantalla.
-                <div className="flex flex-1 flex-col px-12">
-                    <Carousel
-                        setApi={setApi}
-                        className="flex flex-1 flex-col [&>[data-slot=carousel-content]]:flex-1"
-                    >
-                        <CarouselContent className="h-full">
-                            {ordenados.map((a, i) => (
-                                <CarouselItem key={a.Uuid}>
-                                    <SlideEmpleado empleado={a} cargar={Math.abs(i - actual) <= 1} />
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious />
-                        <CarouselNext />
-                    </Carousel>
-                    <p className="text-muted-foreground mt-3 shrink-0 text-center text-sm">
-                        Empleado {actual + 1} de {ordenados.length} · usa las flechas para cambiar
-                    </p>
                 </div>
             )}
         </div>

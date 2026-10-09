@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { es } from 'date-fns/locale'
 import { formatFecha, formatHora } from './formatHora'
 import type { EmpleadoDetalle } from './types'
@@ -48,17 +48,8 @@ function fechaDesdeClave(clave: string) {
     return new Date(anio, mes - 1, dia)
 }
 
-/**
- * Calendario con los días coloreados por motivo, su leyenda y el registro del día elegido.
- * `tamanoCelda` acepta cualquier valor CSS (p. ej. un `clamp(...)`) para agrandar el calendario.
- */
-function CalendarioAsistencias({
-    asistencias,
-    tamanoCelda,
-}: {
-    asistencias: Asistencia[]
-    tamanoCelda?: string
-}) {
+/** Calendario con los días coloreados por motivo, su leyenda y el registro del día elegido. */
+function CalendarioAsistencias({ asistencias }: { asistencias: Asistencia[] }) {
     const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>()
 
     const porFecha = useMemo(() => {
@@ -127,7 +118,6 @@ function CalendarioAsistencias({
                 modifiers={modifiers}
                 modifiersClassNames={modifiersClassNames}
                 className="rounded-md border p-4 text-base [--cell-size:--spacing(11)]"
-                style={tamanoCelda ? ({ '--cell-size': tamanoCelda } as CSSProperties) : undefined}
             />
 
             <div className="min-w-56 space-y-6">
