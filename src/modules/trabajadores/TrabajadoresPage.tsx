@@ -9,6 +9,7 @@ import { getEmpleados } from '@/modules/asistencias/api'
 import { AvatarEmpleado, EstatusBadge } from '@/modules/asistencias/componentes'
 import { fechaDesdeClave } from '@/modules/asistencias/formatHora'
 import type { Empleado } from '@/modules/asistencias/types'
+import Segmentos from '@/components/Segmentos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -146,23 +147,7 @@ function TrabajadoresPage() {
             onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
-        <div role="tablist" aria-label="Filtrar" className="flex w-fit rounded-lg border bg-muted/60 p-0.5">
-          {FILTROS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              role="tab"
-              aria-selected={filtro === f.id}
-              onClick={() => setFiltro(f.id)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                filtro === f.id ? 'bg-background shadow-xs' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {f.nombre}
-            </button>
-          ))}
-        </div>
+        <Segmentos etiqueta="Filtrar" opciones={FILTROS} valor={filtro} onCambio={setFiltro} />
       </div>
 
       {cargando ? (

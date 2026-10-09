@@ -1,16 +1,24 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { useAuth, usePermiso } from './auth/auth-context'
+import { useAuth } from './auth/auth-context'
 import LoginPage from './modules/auth/LoginPage'
 import SinAcceso from './modules/auth/SinAcceso'
-import AsistenciasHome from './modules/asistencias/AsistenciasHome'
-import AsistenciaEmpleados from './modules/asistencias/AsistenciaEmpleados'
-import InventarioPage from './modules/inventario/InventarioPage'
-import TrabajadoresPage from './modules/trabajadores/TrabajadoresPage'
+import { useModulosPermitidos } from './modulos'
+
+function SinModulos() {
+  return (
+    <div className="rounded-xl border border-dashed px-6 py-16 text-center">
+      <p className="font-medium">Tu rol todavía no tiene módulos asignados</p>
+      <p className="mt-1 text-sm text-muted-foreground">Pide a un administrador que te dé permisos.</p>
+    </div>
+  )
+}
 
 function AppLayout() {
-  const puedeGestionar = usePermiso('gestionar_empleados')
+  // Solo se crean las rutas de los módulos que el usuario puede abrir (ver src/modulos.ts).
+  const modulos = useModulosPermitidos()
+  const inicio = modulos[0]
 
   return (
     <SidebarProvider>
@@ -24,15 +32,13 @@ function AppLayout() {
 
         <div className="flex flex-1 flex-col p-3 sm:p-4">
           <Routes>
-            {/* Sin esto la app abre en blanco: no hay nada en "/". */}
-            <Route path="/" element={<Navigate to="/asistencias" replace />} />
-            <Route path="/asistencias" element={<AsistenciasHome />} />
-            <Route path="/asistencias/:uuid" element={<AsistenciaEmpleados />} />
-            <Route path="/inventario" element={<InventarioPage />} />
-            <Route
-              path="/trabajadores"
-              element={puedeGestionar ? <TrabajadoresPage /> : <Navigate to="/asistencias" replace />}
-            />
+            {/* En "/" se abre el primer módulo permitido. */}
+            <Route path="/" element={inicio ? <Navigate to={inicio.ruta} replace /> : <SinModulos />} />
+            {modulos.map((modulo) => (
+              <Route key={modulo.ruta} path={`${modulo.ruta}/*`} element={<modulo.pagina />} />
+            ))}
+            {/* Cualquier otra dirección (o un módulo sin permiso) regresa al inicio. */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </SidebarInset>

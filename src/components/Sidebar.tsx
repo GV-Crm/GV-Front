@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
-import { CalendarCheck, LogOut, Package, UserCogIcon, type LucideIcon } from 'lucide-react'
-import { useAuth, type Permiso } from '@/auth/auth-context'
+import { LogOut } from 'lucide-react'
+import { useAuth } from '@/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useModulosPermitidos } from '@/modulos'
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -17,18 +18,11 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-const items: { title: string; to: string; icon: LucideIcon; permiso?: Permiso }[] = [
-  { title: 'Asistencias', to: '/asistencias', icon: CalendarCheck },
-  { title: 'Trabajadores', to: '/trabajadores', icon: UserCogIcon, permiso: 'gestionar_empleados' },
-  { title: 'Inventario', to: '/inventario', icon: Package },
-]
-
 function Sidebar() {
   const { pathname } = useLocation()
   const { session, perfil } = useAuth()
   const { setOpenMobile } = useSidebar()
-
-  const visibles = items.filter((item) => !item.permiso || perfil?.permisos.includes(item.permiso))
+  const modulos = useModulosPermitidos()
 
   return (
     <SidebarRoot collapsible="offcanvas">
@@ -41,16 +35,16 @@ function Sidebar() {
           <SidebarGroupLabel>Módulos</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visibles.map((item) => (
-                <SidebarMenuItem key={item.to}>
+              {modulos.map((modulo) => (
+                <SidebarMenuItem key={modulo.ruta}>
                   <SidebarMenuButton
-                    isActive={pathname.startsWith(item.to)}
-                    tooltip={item.title}
+                    isActive={pathname.startsWith(modulo.ruta)}
+                    tooltip={modulo.nombre}
                     // En móvil el menú es un panel encima del contenido: se cierra al navegar.
-                    render={<Link to={item.to} onClick={() => setOpenMobile(false)} />}
+                    render={<Link to={modulo.ruta} onClick={() => setOpenMobile(false)} />}
                   >
-                    <item.icon />
-                    <span>{item.title}</span>
+                    <modulo.icono />
+                    <span>{modulo.nombre}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

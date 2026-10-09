@@ -25,7 +25,7 @@ const COLUMNAS_DIA: { titulo: string; campo: keyof FilaDia; ancho: number }[] = 
     { titulo: 'Inicio comida', campo: 'inicioComida', ancho: 14 },
     { titulo: 'Fin comida', campo: 'finComida', ancho: 12 },
     { titulo: 'Salida', campo: 'salida', ancho: 10 },
-    { titulo: 'Motivo', campo: 'motivo', ancho: 20 },
+    { titulo: 'Motivo', campo: 'motivo', ancho: 40 },
 ]
 
 const COLUMNAS_RESUMEN: { titulo: string; valor: (e: EmpleadoReporte) => string | number; ancho: number }[] = [
@@ -85,7 +85,10 @@ export function armarReporte(detalles: EmpleadoDetalle[], mes: Date, titulo: str
                 inicioComida: formatHora(a.InicioComida),
                 finComida: formatHora(a.FinComida),
                 salida: formatHora(a.HoraSalida),
-                motivo: a.Estado?.Motivo ?? 'Sin estado',
+                // En faltas justificadas se agrega el motivo escrito, p. ej. "Falta Justificada: Incapacidad".
+                motivo: a.Justificacion
+                    ? `${a.Estado?.Motivo ?? 'Falta Justificada'}: ${a.Justificacion}`
+                    : (a.Estado?.Motivo ?? 'Sin estado'),
             })),
         }
     })

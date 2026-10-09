@@ -63,6 +63,8 @@ function DetalleDia({ fecha, dia, accion }: Props) {
   const horas = horasDelDia(dia)
   const asistio = dia?.estado === 'asistio' || dia?.estado === 'sin_salida' || dia?.estado === 'sin_entrada'
   const motivos = [...new Set(dia?.registros.map((r) => r.Estado?.Motivo.trim()).filter(Boolean))]
+  // Solo las faltas justificadas tienen este texto.
+  const justificacion = dia?.registros.find((r) => r.Justificacion)
 
   return (
     <div className="space-y-5">
@@ -75,7 +77,18 @@ function DetalleDia({ fecha, dia, accion }: Props) {
         )}
       </div>
 
-      {dia && (
+      {justificacion && (
+        <div className="space-y-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm dark:border-violet-500/30 dark:bg-violet-500/10">
+          <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">Motivo de la justificación</p>
+          <p className="break-words whitespace-pre-line">{justificacion.Justificacion}</p>
+          {justificacion.JustificadoPor && (
+            <p className="text-xs text-muted-foreground">Justificó: {justificacion.JustificadoPor}</p>
+          )}
+        </div>
+      )}
+
+      {/* En una falta justificada todas las horas están vacías: no hace falta mostrarlas. */}
+      {dia && dia.estado !== 'justificada' && (
         <LineaDeTiempo
           pasos={[
             { titulo: 'Entrada', hora: horas.entrada, icono: LogInIcon, obligatorio: asistio },

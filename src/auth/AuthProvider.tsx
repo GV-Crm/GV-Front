@@ -1,8 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { AbilityProvider } from '@casl/react'
 import type { Session } from '@supabase/supabase-js'
 import { pedirJson } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import { AuthContext, type Perfil } from './auth-context'
+import { crearAbility } from './permisos'
 
 type PerfilCargado = { usuarioId: string; perfil: Perfil | null; error: string | null }
 
@@ -35,17 +37,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [usuarioId])
 
   const actual = usuarioId && perfilCargado?.usuarioId === usuarioId ? perfilCargado : null
+  const perfil = actual?.perfil ?? null
+
+  // Los permisos del usuario en formato CASL. Sin perfil, no puede nada.
+  const ability = useMemo(() => crearAbility(perfil?.reglas ?? []), [perfil])
 
   return (
     <AuthContext.Provider
       value={{
         session,
-        perfil: actual?.perfil ?? null,
+        perfil,
         errorPerfil: actual?.error ?? null,
         cargando: cargandoSesion || (Boolean(usuarioId) && !actual),
       }}
     >
-      {children}
+      <AbilityProvider value={ability}>{children}</AbilityProvider>
     </AuthContext.Provider>
   )
 }

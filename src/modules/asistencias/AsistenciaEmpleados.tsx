@@ -4,7 +4,8 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ArrowLeftIcon, CalendarDaysIcon, ChartPieIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { cn } from 'cn'
-import { usePermiso } from '@/auth/auth-context'
+import { SiPuede } from '@/auth/SiPuede'
+import Segmentos from '@/components/Segmentos'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { getCalendario, getDetalles } from './api'
 import type { DiaCalendario, EmpleadoDetalle } from './types'
@@ -55,7 +56,6 @@ type MesCargado = { mes: string; hoy: string; dias: Map<string, DiaCalendario> }
 
 function AsistenciaDetalle() {
     const { uuid } = useParams()
-    const puedeJustificar = usePermiso('justificar_faltas')
     const esEscritorio = useMediaQuery('(min-width: 1024px)')
 
     const [empleado, setEmpleado] = useState<EmpleadoDetalle | null>(null)
@@ -147,13 +147,15 @@ function AsistenciaDetalle() {
             fecha={seleccionado}
             dia={diaSeleccionado}
             accion={
-                puedeJustificar && diaSeleccionado && ESTADOS_JUSTIFICABLES.includes(diaSeleccionado.estado) ? (
-                    <JustificarFalta
-                        key={diaSeleccionado.fecha}
-                        uuid={uuid}
-                        dia={diaSeleccionado}
-                        onCambio={() => setVersion((v) => v + 1)}
-                    />
+                diaSeleccionado && ESTADOS_JUSTIFICABLES.includes(diaSeleccionado.estado) ? (
+                    <SiPuede accion="justificar" recurso="Falta">
+                        <JustificarFalta
+                            key={diaSeleccionado.fecha}
+                            uuid={uuid}
+                            dia={diaSeleccionado}
+                            onCambio={() => setVersion((v) => v + 1)}
+                        />
+                    </SiPuede>
                 ) : undefined
             }
         />
@@ -194,26 +196,7 @@ function AsistenciaDetalle() {
             </section>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <div role="tablist" aria-label="Vista" className="flex rounded-lg border bg-muted/60 p-0.5">
-                    {VISTAS.map((v) => (
-                        <button
-                            key={v.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={vista === v.id}
-                            onClick={() => setVista(v.id)}
-                            className={cn(
-                                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                vista === v.id
-                                    ? 'bg-background text-foreground shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            <v.icono className="size-4" />
-                            {v.nombre}
-                        </button>
-                    ))}
-                </div>
+                <Segmentos etiqueta="Vista" opciones={VISTAS} valor={vista} onCambio={setVista} />
 
                 <div className="flex items-center gap-1">
                     <Button

@@ -19,7 +19,7 @@ export function getCalendario(filtro: { desde?: string; hasta?: string; uuid?: s
   return pedirJson(`/api/calendario?${params}`)
 }
 
-/** Requiere el permiso `justificar_faltas` (rol Admin Administracion). */
-export function justificarFalta(uuid: string, fecha: string, justificada: boolean): Promise<unknown> {
-  return pedirJson('/api/faltas/justificar', { method: 'POST', body: { uuid, fecha, justificada } })
+/** Requiere el permiso "justificar Falta". Para justificar, `motivo` es obligatorio. */
+export function justificarFalta(uuid: string, fecha: string, justificada: boolean, motivo?: string): Promise<unknown> {
+  return pedirJson('/api/faltas/justificar', { method: 'POST', body: { uuid, fecha, justificada, motivo } })
 }

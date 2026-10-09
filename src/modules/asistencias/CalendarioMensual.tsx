@@ -56,13 +56,15 @@ function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargan
           const estilo = dia ? ESTADOS[dia.estado] : null
           const { entrada, salida } = horasDelDia(dia)
           const horario = entrada || salida ? `${formatHora(entrada)} – ${formatHora(salida)}` : null
+          const justificacion = dia?.registros.find((r) => r.Justificacion)?.Justificacion
           const esHoy = fecha === hoy
 
           return (
             <button
               key={fecha}
               type="button"
-              aria-label={`${Number(fecha.slice(8))}${estilo ? `, ${estilo.etiqueta}` : ''}`}
+              title={justificacion ?? undefined}
+              aria-label={`${Number(fecha.slice(8))}${estilo ? `, ${estilo.etiqueta}` : ''}${justificacion ? `: ${justificacion}` : ''}`}
               onClick={() => onSeleccionar(fecha)}
               className={cn(
                 'group flex h-11 min-w-0 flex-col gap-0.5 rounded-lg border p-1 text-left transition-all outline-none hover:-translate-y-px hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-14 sm:p-1.5 xl:h-[4.5rem]',
@@ -100,6 +102,10 @@ function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargan
                 <span className="mt-auto hidden truncate text-[10px] text-muted-foreground tabular-nums sm:block xl:text-[11px]">
                   {horario}
                 </span>
+              )}
+              {/* El motivo solo cabe en pantallas grandes; en las demás se ve en el detalle del día. */}
+              {justificacion && (
+                <span className="mt-auto hidden truncate text-[11px] text-muted-foreground italic xl:block">{justificacion}</span>
               )}
             </button>
           )

@@ -1,10 +1,9 @@
 import { createContext, useContext } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import type { Regla } from './permisos'
 
-/** Debe coincidir con `Permiso` en gv-one (`src/lib/supabase/auth.ts`). */
-export type Permiso = 'gestionar_empleados' | 'justificar_faltas'
-
-export type Perfil = { correo: string; nombre: string | null; rol: string; permisos: Permiso[] }
+/** Lo que responde /api/yo: quién es el usuario y qué puede hacer. */
+export type Perfil = { correo: string; nombre: string | null; rol: string; reglas: Regla[] }
 
 export type AuthState = {
   session: Session | null
@@ -20,8 +19,4 @@ export function useAuth(): AuthState {
   const valor = useContext(AuthContext)
   if (!valor) throw new Error('useAuth debe usarse dentro de <AuthProvider>')
   return valor
-}
-
-export function usePermiso(permiso: Permiso): boolean {
-  return useAuth().perfil?.permisos.includes(permiso) ?? false
 }

@@ -30,6 +30,9 @@ export interface Registro {
   /** Solo en faltas guardadas por el sistema (no tienen horas). */
   Fecha: string | null
   Estado: EstadoAsistencia | null
+  /** Solo en faltas justificadas: el motivo y quién lo escribió. */
+  Justificacion: string | null
+  JustificadoPor: string | null
 }
 
 export interface EmpleadoDetalle {
