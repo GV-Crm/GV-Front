@@ -2,11 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ArrowLeftIcon, CalendarDaysIcon, ChartPieIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import {
+    ArrowLeftIcon,
+    CalendarCheckIcon,
+    CalendarDaysIcon,
+    ChartPieIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    ClipboardListIcon,
+    MousePointerClickIcon,
+    PaletteIcon,
+} from 'lucide-react'
 import { cn } from 'cn'
 import { SiPuede } from '@/auth/SiPuede'
+import Desplegable from '@/components/Desplegable'
 import Segmentos from '@/components/Segmentos'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { getCalendario, getDetalles } from './api'
 import type { DiaCalendario, EmpleadoDetalle } from './types'
 import CalendarioMensual from './CalendarioMensual'
@@ -14,7 +26,8 @@ import DetalleDia from './DetalleDia'
 import DescargarReporte from './DescargarReporte'
 import JustificarFalta from './JustificarFalta'
 import ResumenEmpleado from './ResumenEmpleado'
-import { AvatarEmpleado, EstatusBadge } from './componentes'
+import { EstatusBadge } from './componentes'
+import Avatar from '@/components/Avatar'
 import { ESTADOS, ESTADOS_JUSTIFICABLES, ORDEN_ESTADOS } from './estados'
 import { claveFecha, fechaDesdeClave } from './formatHora'
 import { Button } from '@/components/ui/button'
@@ -36,19 +49,43 @@ function sumarMeses(mes: Date, meses: number) {
     return new Date(mes.getFullYear(), mes.getMonth() + meses, 1)
 }
 
+/** Qué significa cada color del calendario, con cuántos días hubo de cada uno en el mes. */
 function Leyenda({ dias, className }: { dias: DiaCalendario[]; className?: string }) {
     return (
-        <ul className={cn('flex flex-wrap gap-x-3 gap-y-1.5 text-xs', className)}>
-            {ORDEN_ESTADOS.map((estado) => (
-                <li key={estado} className="flex items-center gap-1.5">
-                    <span className={cn('size-2.5 rounded-full', ESTADOS[estado].punto)} />
-                    <span>{ESTADOS[estado].etiqueta}</span>
-                    <span className="text-muted-foreground tabular-nums">
-                        ({dias.filter((d) => d.estado === estado).length})
-                    </span>
-                </li>
-            ))}
-        </ul>
+        <Desplegable
+            titulo="¿Qué significa cada color?"
+            icono={PaletteIcon}
+            resumen={
+                <span className="flex gap-1 pt-1">
+                    {ORDEN_ESTADOS.map((estado) => (
+                        <span key={estado} className={cn('size-2 rounded-full', ESTADOS[estado].punto)} />
+                    ))}
+                </span>
+            }
+            className={className}
+        >
+            <ul className="space-y-2.5">
+                {ORDEN_ESTADOS.map((estado) => {
+                    const estilo = ESTADOS[estado]
+                    return (
+                        <li key={estado} className="flex items-start gap-2.5 text-sm">
+                            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', estilo.badge)}>
+                                <estilo.icono className="size-3.5" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="flex items-center justify-between gap-2 font-medium">
+                                    {estilo.etiqueta}
+                                    <span className="text-xs font-normal text-muted-foreground tabular-nums">
+                                        {dias.filter((d) => d.estado === estado).length} días
+                                    </span>
+                                </span>
+                                <span className="block text-xs text-muted-foreground">{estilo.descripcion}</span>
+                            </span>
+                        </li>
+                    )
+                })}
+            </ul>
+        </Desplegable>
     )
 }
 
@@ -144,6 +181,8 @@ function AsistenciaDetalle() {
     const diaSeleccionado = seleccionado ? dias.get(seleccionado) : undefined
     const detalle = (
         <DetalleDia
+            // La clave hace que la animación de entrada se repita al elegir otro día.
+            key={seleccionado ?? 'ninguno'}
             fecha={seleccionado}
             dia={diaSeleccionado}
             accion={
@@ -163,19 +202,20 @@ function AsistenciaDetalle() {
 
     return (
         <div className="flex flex-col gap-3 sm:gap-4">
-            <section className="overflow-hidden rounded-xl border bg-card shadow-xs">
+            <section className={cn('overflow-hidden rounded-xl border bg-card shadow-xs', ENTRADA)}>
                 <div className="h-1 bg-linear-to-r from-indigo-500 via-violet-500 to-sky-500" />
                 <div className="flex items-center gap-2 p-2 sm:gap-3 sm:p-3">
                     <Button
                         variant="ghost"
                         size="icon"
                         aria-label="Regresar a empleados"
+                        title="Regresar a la lista de empleados"
                         nativeButton={false}
                         render={<Link to="/asistencias" />}
                     >
                         <ArrowLeftIcon />
                     </Button>
-                    <AvatarEmpleado nombre={empleado.Nombre} className="size-10 sm:size-12 sm:text-base" />
+                    <Avatar nombre={empleado.Nombre} className="size-10 sm:size-12 sm:text-base" />
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h1 className="truncate text-base font-semibold sm:text-xl">{empleado.Nombre}</h1>
@@ -195,39 +235,54 @@ function AsistenciaDetalle() {
                 </div>
             </section>
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <Segmentos etiqueta="Vista" opciones={VISTAS} valor={vista} onCambio={setVista} />
+            {/* En el celular: las pestañas ocupan todo el ancho y el mes va en su propia fila. */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <Segmentos
+                    etiqueta="Vista"
+                    opciones={VISTAS}
+                    valor={vista}
+                    onCambio={setVista}
+                    className="w-full sm:w-fit"
+                />
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5 shadow-xs sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         aria-label="Mes anterior"
+                        title="Mes anterior"
                         disabled={!puedeRetroceder}
                         onClick={() => irAMes(sumarMeses(mes, -1))}
                     >
                         <ChevronLeftIcon />
                     </Button>
-                    <span className="min-w-32 text-center text-sm font-semibold first-letter:uppercase">
+                    <span
+                        key={claveMes}
+                        className={cn('flex-1 text-center text-sm font-semibold first-letter:uppercase sm:min-w-32', ENTRADA)}
+                    >
                         {format(mes, 'LLLL yyyy', { locale: es })}
                     </span>
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         aria-label="Mes siguiente"
+                        title="Mes siguiente"
                         disabled={!puedeAvanzar}
                         onClick={() => irAMes(sumarMeses(mes, 1))}
                     >
                         <ChevronRightIcon />
                     </Button>
                     <Button
-                        variant="ghost"
+                        variant="outline"
+                        size="sm"
+                        title="Ir al mes actual"
                         disabled={claveMes === claveFecha(mesActual)}
                         onClick={() => {
                             setMes(mesActual)
                             setSeleccionado(claveFecha(new Date()))
                         }}
                     >
+                        <CalendarCheckIcon data-icon="inline-start" />
                         Hoy
                     </Button>
                 </div>
@@ -241,25 +296,36 @@ function AsistenciaDetalle() {
                 <ResumenEmpleado mes={mes} dias={listaDias} cargando={cargandoMes} asistencias={empleado.Asistencias} />
             ) : (
                 <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
-                    <section className="rounded-xl border bg-card p-2 shadow-xs sm:p-4">
-                        <CalendarioMensual
-                            mes={mes}
-                            dias={dias}
-                            hoy={datosMes?.hoy ?? claveFecha(new Date())}
-                            seleccionado={seleccionado}
-                            onSeleccionar={seleccionar}
-                            cargando={cargandoMes}
-                        />
-                        <Leyenda dias={listaDias} className="mt-3 border-t px-1 pt-3 lg:hidden" />
-                    </section>
+                    <div className="space-y-3">
+                        <section className={cn('rounded-xl border bg-card p-2 shadow-xs sm:p-4', ENTRADA)}>
+                            <p className="mb-2 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
+                                <MousePointerClickIcon className="size-3.5" />
+                                {esEscritorio ? 'Haz clic en un día para ver sus horarios.' : 'Toca un día para ver sus horarios.'}
+                            </p>
+                            <CalendarioMensual
+                                key={claveMes}
+                                mes={mes}
+                                dias={dias}
+                                hoy={datosMes?.hoy ?? claveFecha(new Date())}
+                                seleccionado={seleccionado}
+                                onSeleccionar={seleccionar}
+                                cargando={cargandoMes}
+                            />
+                        </section>
+                        {!esEscritorio && <Leyenda dias={listaDias} />}
+                    </div>
 
                     {esEscritorio && (
-                        <aside className="sticky top-4 space-y-4 rounded-xl border bg-card p-4 shadow-xs">
-                            <h2 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                        <aside
+                            style={retrasoEscalonado(2)}
+                            className={cn('sticky top-18 space-y-4 rounded-xl border bg-card p-4 shadow-xs', ENTRADA)}
+                        >
+                            <h2 className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                <ClipboardListIcon className="size-4" />
                                 Detalle del día
                             </h2>
                             {detalle}
-                            <Leyenda dias={listaDias} className="border-t pt-4" />
+                            <Leyenda dias={listaDias} className="shadow-none" />
                         </aside>
                     )}
                 </div>

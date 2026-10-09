@@ -1,22 +1,6 @@
-import { cn } from 'cn'
-import { colorDeAvatar, ESTADOS, iniciales } from './estados'
+import { ESTADOS } from './estados'
 import type { EstadoDia } from './types'
 import { Badge } from '@/components/ui/badge'
-
-export function AvatarEmpleado({ nombre, className }: { nombre: string; className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-        colorDeAvatar(nombre),
-        className,
-      )}
-    >
-      {iniciales(nombre)}
-    </span>
-  )
-}
 
 export function EstatusBadge({ activo }: { activo: boolean }) {
   return activo ? (
@@ -26,12 +10,13 @@ export function EstatusBadge({ activo }: { activo: boolean }) {
   )
 }
 
-export function EstadoBadge({ estado }: { estado: EstadoDia }) {
+/** Etiqueta de color con el estado del día. `soloIconoEnMovil`: en pantallas chicas solo se ve el ícono. */
+export function EstadoBadge({ estado, soloIconoEnMovil = false }: { estado: EstadoDia; soloIconoEnMovil?: boolean }) {
   const estilo = ESTADOS[estado]
   return (
-    <Badge className={estilo.badge}>
+    <Badge className={estilo.badge} title={estilo.descripcion}>
       <estilo.icono data-icon="inline-start" />
-      {estilo.etiqueta}
+      <span className={soloIconoEnMovil ? 'sr-only sm:not-sr-only' : undefined}>{estilo.etiqueta}</span>
     </Badge>
   )
 }

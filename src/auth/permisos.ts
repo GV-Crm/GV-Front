@@ -1,5 +1,13 @@
 import { createMongoAbility, type MongoAbility } from '@casl/ability'
 import { useAbility } from '@casl/react'
+import {
+  CalendarCheckIcon,
+  FileCheckIcon,
+  PackageIcon,
+  ShieldCheckIcon,
+  UserCogIcon,
+  type LucideIcon,
+} from 'lucide-react'
 
 /*
  * Permisos con CASL.
@@ -18,6 +26,15 @@ export type Recurso = 'Asistencia' | 'Falta' | 'Empleado' | 'Permiso' | 'Inventa
 export type AppAbility = MongoAbility<[Accion | 'manage', Recurso | 'all']>
 
 export type Regla = { action: Accion | 'manage'; subject: Recurso | 'all' }
+
+/** Texto e ícono de cada permiso, para mostrarle a la persona qué puede hacer (menú de usuario). */
+export const PERMISOS: { accion: Accion; recurso: Recurso; texto: string; icono: LucideIcon }[] = [
+  { accion: 'ver', recurso: 'Asistencia', texto: 'Ver asistencias y reportes', icono: CalendarCheckIcon },
+  { accion: 'justificar', recurso: 'Falta', texto: 'Justificar faltas', icono: FileCheckIcon },
+  { accion: 'gestionar', recurso: 'Empleado', texto: 'Dar de alta y de baja trabajadores', icono: UserCogIcon },
+  { accion: 'gestionar', recurso: 'Permiso', texto: 'Administrar permisos y cuentas', icono: ShieldCheckIcon },
+  { accion: 'ver', recurso: 'Inventario', texto: 'Ver el inventario', icono: PackageIcon },
+]
 
 export function crearAbility(reglas: Regla[]): AppAbility {
   return createMongoAbility<AppAbility>(reglas)

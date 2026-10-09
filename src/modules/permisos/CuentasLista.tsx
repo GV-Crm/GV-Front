@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { CheckIcon, Loader2Icon, LockIcon } from 'lucide-react'
+import { CheckIcon, KeyRoundIcon, Loader2Icon, LockIcon } from 'lucide-react'
+import { cn } from 'cn'
 import { cambiarRolDeCuenta, getCuentas, type Cuenta } from './api'
 import { CLASES_SELECT } from './estilos'
 import NuevaCuenta from './NuevaCuenta'
-import { AvatarEmpleado } from '@/modules/asistencias/componentes'
+import Avatar from '@/components/Avatar'
+import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { Skeleton } from '@/components/ui/skeleton'
 
 /** Selector del rol de una cuenta: guarda en cuanto se elige otro rol. */
@@ -71,15 +73,22 @@ function CuentasLista() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{cuentas.length} cuentas con acceso</p>
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <KeyRoundIcon className="size-4 text-violet-500" />
+          {cuentas.length} cuentas con acceso
+        </p>
         <NuevaCuenta roles={roles} onCreada={(nueva) => setCuentas((lista) => [...lista!, nueva])} />
       </div>
 
       <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
-        {cuentas.map((cuenta) => (
-          <li key={cuenta.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:px-4">
+        {cuentas.map((cuenta, i) => (
+          <li
+            key={cuenta.id}
+            style={retrasoEscalonado(i)}
+            className={cn('flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:px-4', ENTRADA)}
+          >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <AvatarEmpleado nombre={cuenta.Nombre ?? cuenta.Correo} />
+              <Avatar nombre={cuenta.Nombre ?? cuenta.Correo} />
               <div className="min-w-0">
                 <p className="truncate font-medium">{cuenta.Nombre ?? 'Sin nombre'}</p>
                 <p className="truncate text-xs text-muted-foreground">{cuenta.Correo}</p>

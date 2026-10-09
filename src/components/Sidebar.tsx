@@ -1,8 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
-import { useAuth } from '@/auth/auth-context'
-import { supabase } from '@/lib/supabase'
+import { cn } from 'cn'
 import { useModulosPermitidos } from '@/modulos'
+import UsuarioMenu from '@/components/UsuarioMenu'
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -15,60 +14,70 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar'
 
 function Sidebar() {
   const { pathname } = useLocation()
-  const { session, perfil } = useAuth()
   const { setOpenMobile } = useSidebar()
   const modulos = useModulosPermitidos()
 
   return (
     <SidebarRoot collapsible="offcanvas">
-      <SidebarHeader>
-        <div className="px-2 py-1.5 text-base font-semibold">GV</div>
+      {/* Arriba: quién eres. Al tocarlo se ve tu rol, tus permisos y "Cerrar sesión". */}
+      <SidebarHeader className="p-3">
+        <UsuarioMenu />
       </SidebarHeader>
+
+      <SidebarSeparator className="mx-0" />
 
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Módulos</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {modulos.map((modulo) => (
-                <SidebarMenuItem key={modulo.ruta}>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith(modulo.ruta)}
-                    tooltip={modulo.nombre}
-                    // En móvil el menú es un panel encima del contenido: se cierra al navegar.
-                    render={<Link to={modulo.ruta} onClick={() => setOpenMobile(false)} />}
-                  >
-                    <modulo.icono />
-                    <span>{modulo.nombre}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="gap-1">
+              {modulos.map((modulo) => {
+                const activo = pathname.startsWith(modulo.ruta)
+                return (
+                  <SidebarMenuItem key={modulo.ruta}>
+                    <SidebarMenuButton
+                      size="lg"
+                      isActive={activo}
+                      tooltip={modulo.nombre}
+                      className="gap-3 transition-all duration-200 hover:translate-x-0.5"
+                      // En móvil el menú es un panel encima del contenido: se cierra al navegar.
+                      render={<Link to={modulo.ruta} onClick={() => setOpenMobile(false)} />}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200',
+                          modulo.color,
+                          activo && 'scale-110 shadow-sm',
+                        )}
+                      >
+                        <modulo.icono className="size-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{modulo.nombre}</span>
+                        <span className="block truncate text-xs font-normal text-muted-foreground">{modulo.descripcion}</span>
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <div className="px-2 text-xs">
-          <p className="truncate font-medium">{perfil?.nombre ?? session?.user.email}</p>
-          <p className="truncate text-muted-foreground">
-            {perfil?.rol}
-            {perfil?.nombre && ` · ${session?.user.email}`}
-          </p>
+      <SidebarFooter className="p-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="flex size-6 items-center justify-center rounded-md bg-linear-to-br from-indigo-500 to-violet-500 text-[10px] font-bold text-white">
+            GV
+          </span>
+          GV One
         </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Cerrar sesión" onClick={() => supabase.auth.signOut()}>
-              <LogOut />
-              <span>Cerrar sesión</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarFooter>
 
       <SidebarRail />

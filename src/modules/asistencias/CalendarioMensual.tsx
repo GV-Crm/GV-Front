@@ -66,10 +66,13 @@ function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargan
               title={justificacion ?? undefined}
               aria-label={`${Number(fecha.slice(8))}${estilo ? `, ${estilo.etiqueta}` : ''}${justificacion ? `: ${justificacion}` : ''}`}
               onClick={() => onSeleccionar(fecha)}
+              // Las celdas aparecen una tras otra al cambiar de mes.
+              style={{ animationDelay: `${i * 8}ms` }}
               className={cn(
                 'group flex h-11 min-w-0 flex-col gap-0.5 rounded-lg border p-1 text-left transition-all outline-none hover:-translate-y-px hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-14 sm:p-1.5 xl:h-[4.5rem]',
                 estilo ? estilo.celda : 'border-dashed bg-muted/20 text-muted-foreground/60',
-                seleccionado === fecha && 'ring-2 ring-indigo-500 ring-offset-1 ring-offset-background',
+                'motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:fill-mode-both',
+                seleccionado === fecha && 'z-10 scale-[1.04] shadow-md ring-2 ring-indigo-500 ring-offset-1 ring-offset-card',
               )}
             >
               <div className="flex items-center justify-between gap-1">

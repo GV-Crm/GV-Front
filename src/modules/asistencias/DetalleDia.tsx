@@ -4,18 +4,20 @@ import { es } from 'date-fns/locale'
 import { CoffeeIcon, LogInIcon, LogOutIcon, MousePointerClickIcon, UtensilsIcon, type LucideIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { EstadoBadge } from './componentes'
+import { ESTADOS } from './estados'
 import { fechaDesdeClave, formatHora, horasDelDia } from './formatHora'
 import type { DiaCalendario } from './types'
+import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 
 type Paso = { titulo: string; hora: string | null; icono: LucideIcon; obligatorio: boolean }
 
 function LineaDeTiempo({ pasos }: { pasos: Paso[] }) {
   return (
     <ol className="relative space-y-4 before:absolute before:top-2 before:bottom-2 before:left-4 before:w-px before:bg-border">
-      {pasos.map((paso) => {
+      {pasos.map((paso, i) => {
         const faltante = paso.obligatorio && !paso.hora
         return (
-          <li key={paso.titulo} className="relative flex items-center gap-3">
+          <li key={paso.titulo} style={retrasoEscalonado(i + 1)} className={cn('relative flex items-center gap-3', ENTRADA)}>
             <span
               className={cn(
                 'z-10 flex size-8 items-center justify-center rounded-full border bg-background',
@@ -52,8 +54,10 @@ type Props = {
 function DetalleDia({ fecha, dia, accion }: Props) {
   if (!fecha) {
     return (
-      <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-        <MousePointerClickIcon className="size-6" />
+      <div className={cn('flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground', ENTRADA)}>
+        <span className="flex size-10 items-center justify-center rounded-full bg-muted motion-safe:animate-bounce">
+          <MousePointerClickIcon className="size-5" />
+        </span>
         Elige un día del calendario para ver sus horarios.
       </div>
     )
@@ -67,11 +71,14 @@ function DetalleDia({ fecha, dia, accion }: Props) {
   const justificacion = dia?.registros.find((r) => r.Justificacion)
 
   return (
-    <div className="space-y-5">
+    <div className={cn('space-y-5', ENTRADA)}>
       <div className="space-y-2">
         <p className="text-base font-semibold first-letter:uppercase">{titulo}</p>
         {dia ? (
-          <EstadoBadge estado={dia.estado} />
+          <div className="space-y-1">
+            <EstadoBadge estado={dia.estado} />
+            <p className="text-xs text-muted-foreground">{ESTADOS[dia.estado].descripcion}</p>
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">Sin información: día futuro o anterior a su ingreso.</p>
         )}
