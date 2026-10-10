@@ -72,7 +72,7 @@ function UsuarioMenu({ compacto = false }: { compacto?: boolean }) {
           <div className="min-w-0">
             <p className="truncate font-semibold">{nombre}</p>
             <p className="truncate text-xs text-muted-foreground">{session?.user.email}</p>
-            <Badge className="mt-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{perfil?.rol}</Badge>
+            <Badge className="mt-1 bg-primary/10 text-primary">{perfil?.rol}</Badge>
           </div>
         </div>
 
@@ -81,7 +81,7 @@ function UsuarioMenu({ compacto = false }: { compacto?: boolean }) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Lo que puedes hacer</DropdownMenuLabel>
           {esAdmin && (
-            <p className="flex items-center gap-1.5 px-2 pb-1 text-xs font-medium text-indigo-600 dark:text-indigo-300">
+            <p className="flex items-center gap-1.5 px-2 pb-1 text-xs font-medium text-primary">
               <SparklesIcon className="size-3.5" />
               Acceso total al sistema
             </p>

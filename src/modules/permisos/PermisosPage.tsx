@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { ArrowRightIcon, CircleHelpIcon, ShieldCheckIcon, UsersIcon } from 'lucide-react'
+import { cn } from 'cn'
 import CuentasLista from './CuentasLista'
 import PermisosPorRol from './PermisosPorRol'
 import Desplegable from '@/components/Desplegable'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import Segmentos from '@/components/Segmentos'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 
 const VISTAS = [
   { id: 'roles', nombre: 'Roles y permisos', icono: ShieldCheckIcon },
@@ -25,7 +27,7 @@ function ComoFunciona() {
       <ol className="flex flex-col gap-2 sm:flex-row sm:items-center">
         {pasos.map((paso, i) => (
           <li key={paso.titulo} className="flex items-center gap-2 sm:flex-1">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
+            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold', COLOR_SECCION.control.suave)}>
               {i + 1}
             </span>
             <span>
@@ -48,12 +50,10 @@ function PermisosPage() {
   const [vista, setVista] = useState<Vista>('roles')
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <EncabezadoPagina
         icono={ShieldCheckIcon}
-        color="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300"
         titulo="Permisos"
-        descripcion="Decide qué puede ver y hacer cada rol, y qué rol tiene cada cuenta."
       />
 
       <Desplegable titulo="¿Cómo funciona?" icono={CircleHelpIcon} resumen="Cuenta → Rol → Permisos">

@@ -15,6 +15,8 @@ import { ESTADOS, ORDEN_ESTADOS } from './estados'
 import FaltasPorMes from './FaltasPorMes'
 import type { DiaCalendario, EmpleadoDetalle } from './types'
 import Ayuda from '@/components/Ayuda'
+import Cifra from '@/components/Cifra'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import Desplegable from '@/components/Desplegable'
 import { ELEVAR_AL_PASAR, ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,15 +28,14 @@ function TarjetaKpi({ titulo, valor, detalle, icono: Icono, color, posicion }: K
     <div
       title={detalle}
       style={retrasoEscalonado(posicion)}
-      className={cn('flex items-center gap-3 rounded-xl border bg-card p-3 shadow-xs sm:p-4', ENTRADA, ELEVAR_AL_PASAR)}
+      className={cn('flex items-center gap-3 rounded-xl border bg-card p-3 sm:p-4', ENTRADA, ELEVAR_AL_PASAR)}
     >
       <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-10', color)}>
         <Icono className="size-5" />
       </span>
       <div className="min-w-0">
-        <p className="text-xl font-semibold tabular-nums sm:text-2xl">{valor}</p>
+        <p><Cifra valor={valor} className="text-2xl sm:text-3xl" /></p>
         <p className="truncate text-xs font-medium">{titulo}</p>
-        <p className="hidden truncate text-xs text-muted-foreground sm:block">{detalle}</p>
       </div>
     </div>
   )
@@ -54,28 +55,28 @@ function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
       valor: String(asistencias),
       detalle: 'Con entrada y salida',
       icono: CircleCheckIcon,
-      color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+      color: COLOR_SECCION.indicadores.suave,
     },
     {
       titulo: 'Faltas',
       valor: String(faltas),
       detalle: 'Sin justificar',
       icono: CircleXIcon,
-      color: 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300',
+      color: COLOR_SECCION.indicadores.suave,
     },
     {
       titulo: 'Justificadas',
       valor: String(cuenta('justificada')),
       detalle: 'Faltas con justificación',
       icono: FileCheckIcon,
-      color: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+      color: COLOR_SECCION.indicadores.suave,
     },
     {
       titulo: 'Por completar',
       valor: String(incompletos),
       detalle: 'Falta entrada o salida',
       icono: TriangleAlertIcon,
-      color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+      color: COLOR_SECCION.indicadores.suave,
     },
     {
       titulo: 'Asistencia',
@@ -83,7 +84,7 @@ function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
       // Las faltas justificadas no cuentan en contra.
       detalle: `${asistencias + incompletos} de ${evaluados} días laborales`,
       icono: TrendingUpIcon,
-      color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300',
+      color: COLOR_SECCION.indicadores.suave,
     },
   ]
 }
@@ -94,14 +95,14 @@ function Distribucion({ dias }: { dias: DiaCalendario[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex h-3 overflow-hidden rounded-full bg-muted">
+      <div className="bandas-crecen flex h-3 overflow-hidden rounded-full bg-muted">
         {conteo
           .filter((c) => c.total > 0)
           .map((c) => (
             <div
               key={c.estado}
-              // Cada tramo de la barra entra desde la izquierda.
-              className={cn(ESTADOS[c.estado].punto, 'motion-safe:animate-in motion-safe:slide-in-from-left-full motion-safe:duration-700')}
+              // La barra completa crece de izquierda a derecha (clase bandas-crecen).
+              className={ESTADOS[c.estado].punto}
               style={{ width: `${(c.total / total) * 100}%` }}
               title={`${ESTADOS[c.estado].etiqueta}: ${c.total}`}
             />
@@ -139,9 +140,9 @@ function ResumenEmpleado({ mes, dias, cargando, asistencias }: Props) {
       </section>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <section style={retrasoEscalonado(3)} className={cn('rounded-xl border bg-card p-4 shadow-xs', ENTRADA)}>
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <ChartPieIcon className="size-4 text-indigo-500" />
+        <section style={retrasoEscalonado(3)} className={cn('rounded-xl border bg-card p-4', ENTRADA)}>
+          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold">
+            <ChartPieIcon className={cn('size-4', COLOR_SECCION.indicadores.texto)} />
             <span className="first-letter:uppercase">Distribución de {nombreMes}</span>
             <Ayuda>Cuántos días del mes fueron de cada tipo. La barra de colores muestra la proporción.</Ayuda>
           </h2>
@@ -150,9 +151,9 @@ function ResumenEmpleado({ mes, dias, cargando, asistencias }: Props) {
 
         {/* En el celular el historial queda plegado para no hacer la página tan larga. */}
         <Desplegable titulo="Historial de faltas por mes" icono={HistoryIcon} resumen="Toca para ver mes por mes" soloEnMovil>
-          <section style={retrasoEscalonado(4)} className={cn('rounded-xl border-0 bg-card sm:border sm:p-4 sm:shadow-xs', ENTRADA)}>
-            <h2 className="mb-4 hidden items-center gap-2 text-sm font-semibold sm:flex">
-              <HistoryIcon className="size-4 text-rose-500" />
+          <section style={retrasoEscalonado(4)} className={cn('rounded-xl border-0 bg-card sm:border sm:p-4', ENTRADA)}>
+            <h2 className="mb-4 hidden items-center gap-2 text-base font-semibold sm:flex">
+              <HistoryIcon className={cn('size-4', COLOR_SECCION.indicadores.texto)} />
               Historial de faltas por mes
               <Ayuda>Faltas sin justificar y justificadas de cada mes, desde su primer registro hasta hoy.</Ayuda>
             </h2>

@@ -73,7 +73,7 @@ function JustificarFalta({ uuid, dia, onCambio }: { uuid: string; dia: DiaCalend
       <Button
         type="submit"
         size="lg"
-        className="w-full bg-violet-600 text-white hover:bg-violet-700"
+        className="w-full"
         disabled={enviando || !motivo.trim()}
       >
         {enviando ? <Loader2Icon data-icon="inline-start" className="animate-spin" /> : <FileCheckIcon data-icon="inline-start" />}

@@ -19,6 +19,7 @@ import Desplegable from '@/components/Desplegable'
 import Segmentos from '@/components/Segmentos'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { getCalendario, getDetalles } from './api'
 import type { DiaCalendario, EmpleadoDetalle } from './types'
 import CalendarioMensual from './CalendarioMensual'
@@ -99,6 +100,8 @@ function AsistenciaDetalle() {
     const [loading, setLoading] = useState(true)
     const [vista, setVista] = useState<Vista>('calendario')
     const [mes, setMes] = useState(() => inicioDeMes(new Date()))
+    // Hacia dónde se movió el último cambio de mes (null = recién abierto).
+    const [direccion, setDireccion] = useState<'derecha' | 'izquierda' | null>(null)
     const [mesCargado, setMesCargado] = useState<MesCargado | null>(null)
     const [seleccionado, setSeleccionado] = useState<string | null>(() => claveFecha(new Date()))
     const [detalleAbierto, setDetalleAbierto] = useState(false)
@@ -147,6 +150,8 @@ function AsistenciaDetalle() {
     const puedeAvanzar = mes < mesActual
 
     const irAMes = (nuevo: Date) => {
+        // El calendario entra desde el lado hacia el que se navega.
+        setDireccion(nuevo > mes ? 'derecha' : 'izquierda')
         setMes(nuevo)
         setSeleccionado(null)
     }
@@ -201,9 +206,8 @@ function AsistenciaDetalle() {
     )
 
     return (
-        <div className="flex flex-col gap-3 sm:gap-4">
-            <section className={cn('overflow-hidden rounded-xl border bg-card shadow-xs', ENTRADA)}>
-                <div className="h-1 bg-linear-to-r from-indigo-500 via-violet-500 to-sky-500" />
+        <div className="flex flex-col gap-4 sm:gap-6">
+            <section className={cn('overflow-hidden rounded-xl border bg-card', ENTRADA)}>
                 <div className="flex items-center gap-2 p-2 sm:gap-3 sm:p-3">
                     <Button
                         variant="ghost"
@@ -215,7 +219,7 @@ function AsistenciaDetalle() {
                     >
                         <ArrowLeftIcon />
                     </Button>
-                    <Avatar nombre={empleado.Nombre} className="size-10 sm:size-12 sm:text-base" />
+                    <Avatar nombre={empleado.Nombre} className={cn(COLOR_SECCION.personas.suave, 'size-10 sm:size-12 sm:text-base')} />
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h1 className="truncate text-base font-semibold sm:text-xl">{empleado.Nombre}</h1>
@@ -245,7 +249,7 @@ function AsistenciaDetalle() {
                     className="w-full sm:w-fit"
                 />
 
-                <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5 shadow-xs sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -278,6 +282,7 @@ function AsistenciaDetalle() {
                         title="Ir al mes actual"
                         disabled={claveMes === claveFecha(mesActual)}
                         onClick={() => {
+                            setDireccion(mesActual > mes ? 'derecha' : 'izquierda')
                             setMes(mesActual)
                             setSeleccionado(claveFecha(new Date()))
                         }}
@@ -297,13 +302,14 @@ function AsistenciaDetalle() {
             ) : (
                 <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]">
                     <div className="space-y-3">
-                        <section className={cn('rounded-xl border bg-card p-2 shadow-xs sm:p-4', ENTRADA)}>
+                        <section className={cn('rounded-xl border bg-card p-2 sm:p-4', ENTRADA)}>
                             <p className="mb-2 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
                                 <MousePointerClickIcon className="size-3.5" />
                                 {esEscritorio ? 'Haz clic en un día para ver sus horarios.' : 'Toca un día para ver sus horarios.'}
                             </p>
                             <CalendarioMensual
                                 key={claveMes}
+                                direccion={direccion}
                                 mes={mes}
                                 dias={dias}
                                 hoy={datosMes?.hoy ?? claveFecha(new Date())}
@@ -318,7 +324,7 @@ function AsistenciaDetalle() {
                     {esEscritorio && (
                         <aside
                             style={retrasoEscalonado(2)}
-                            className={cn('sticky top-18 space-y-4 rounded-xl border bg-card p-4 shadow-xs', ENTRADA)}
+                            className={cn('sticky top-18 space-y-4 rounded-xl border bg-card p-4', ENTRADA)}
                         >
                             <h2 className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 <ClipboardListIcon className="size-4" />

@@ -16,7 +16,7 @@ function Ayuda({ children, etiqueta = '¿Qué es esto?' }: { children: ReactNode
         openOnHover
         delay={150}
         aria-label={etiqueta}
-        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full align-middle text-muted-foreground outline-none transition-colors hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full align-middle text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <InfoIcon className="size-4" />
       </Popover.Trigger>

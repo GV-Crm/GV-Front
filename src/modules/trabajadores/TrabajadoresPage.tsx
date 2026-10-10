@@ -22,6 +22,8 @@ import Avatar from '@/components/Avatar'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import Segmentos from '@/components/Segmentos'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
+import { conTransicion } from '@/lib/transicion'
 import { sinAcentos } from '@/lib/texto'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,9 +68,12 @@ function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; 
   const IconoAccion = darDeBaja ? UserMinusIcon : UserRoundCheckIcon
 
   return (
-    <li style={retrasoEscalonado(posicion)} className={cn(ENTRADA, !empleado.Activo && 'bg-muted/30')}>
+    <li
+      // Nombre único por fila: con él, la fila se desliza a su nuevo lugar al filtrar (ver src/lib/transicion.ts).
+      style={{ ...retrasoEscalonado(posicion), viewTransitionName: `trabajador-${empleado.Uuid}` }}
+      className={cn(ENTRADA, !empleado.Activo && 'bg-muted/30')}>
       <div className="flex items-center gap-3 p-3 sm:px-4">
-        <Avatar nombre={empleado.Nombre} className={cn(!empleado.Activo && 'grayscale')} />
+        <Avatar nombre={empleado.Nombre} className={cn(COLOR_SECCION.personas.suave, !empleado.Activo && 'grayscale')} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium">{empleado.Nombre}</p>
@@ -100,13 +105,13 @@ function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; 
           className={cn(
             'mx-3 mb-3 rounded-lg border p-3 sm:ml-16',
             darDeBaja
-              ? 'border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10'
+              ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10'
               : 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10',
             ENTRADA,
           )}
         >
           <p className="flex items-center gap-2 text-sm font-medium">
-            <TriangleAlertIcon className={cn('size-4', darDeBaja ? 'text-rose-600' : 'text-emerald-600')} />
+            <TriangleAlertIcon className={cn('size-4', darDeBaja ? 'text-red-700' : 'text-emerald-600')} />
             ¿{textoAccion} a {empleado.Nombre}?
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -120,7 +125,7 @@ function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; 
             </Button>
             <Button
               disabled={enviando}
-              className={darDeBaja ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'}
+              className={darDeBaja ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-emerald-700 text-white hover:bg-emerald-800'}
               onClick={confirmar}
             >
               {enviando ? <Loader2Icon data-icon="inline-start" className="animate-spin" /> : <IconoAccion data-icon="inline-start" />}
@@ -162,22 +167,21 @@ function TrabajadoresPage() {
       .sort((a, b) => a.Nombre.localeCompare(b.Nombre))
   }, [empleados, filtro, busqueda])
 
+  // Con transición: si al darlo de baja sale del filtro actual, las demás filas suben suavemente.
   const reemplazar = (actualizado: Empleado) =>
-    setEmpleados((lista) => lista.map((e) => (e.Uuid === actualizado.Uuid ? actualizado : e)))
+    conTransicion(() => setEmpleados((lista) => lista.map((e) => (e.Uuid === actualizado.Uuid ? actualizado : e))))
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <EncabezadoPagina
         icono={UserCogIcon}
-        color="bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300"
         titulo="Trabajadores"
-        descripcion="Da de alta a personas nuevas o da de baja a quien ya no trabaja aquí."
         acciones={<FormularioTrabajador areas={areas} onCreado={(nuevo) => setEmpleados((lista) => [...lista, nuevo])} />}
       />
 
       {!cargando && !error && (
         <div className={cn('flex flex-wrap gap-2 text-sm', ENTRADA)}>
-          <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
+          <span className={cn('flex items-center gap-1.5 rounded-full px-3 py-1 font-medium', COLOR_SECCION.indicadores.suave)}>
             <UserRoundCheckIcon className="size-4" />
             {activos} activos
           </span>
@@ -198,7 +202,7 @@ function TrabajadoresPage() {
             onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
-        <Segmentos etiqueta="Filtrar" opciones={FILTROS} valor={filtro} onCambio={setFiltro} className="w-full sm:w-fit" />
+        <Segmentos etiqueta="Filtrar" opciones={FILTROS} valor={filtro} onCambio={(valor) => conTransicion(() => setFiltro(valor))} className="w-full sm:w-fit" />
       </div>
 
       {cargando ? (
@@ -217,7 +221,7 @@ function TrabajadoresPage() {
           <p className="text-sm text-muted-foreground">No hay trabajadores con ese filtro.</p>
         </div>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {visibles.map((e, i) => (
             <FilaTrabajador key={e.Uuid} empleado={e} posicion={i} onCambio={reemplazar} />
           ))}

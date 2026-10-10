@@ -7,21 +7,23 @@ import { EstadoBadge } from './componentes'
 import { ESTADOS } from './estados'
 import { fechaDesdeClave, formatHora, horasDelDia } from './formatHora'
 import type { DiaCalendario } from './types'
-import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { ENTRADA } from '@/lib/animaciones'
 
 type Paso = { titulo: string; hora: string | null; icono: LucideIcon; obligatorio: boolean }
 
 function LineaDeTiempo({ pasos }: { pasos: Paso[] }) {
   return (
-    <ol className="relative space-y-4 before:absolute before:top-2 before:bottom-2 before:left-4 before:w-px before:bg-border">
+    <ol className="relative space-y-4">
+      {/* Línea vertical que se dibuja de arriba hacia abajo; cada paso aparece cuando la línea llega a él. */}
+      <span aria-hidden className="linea-crece absolute top-2 bottom-2 left-4 w-px bg-border" />
       {pasos.map((paso, i) => {
         const faltante = paso.obligatorio && !paso.hora
         return (
-          <li key={paso.titulo} style={retrasoEscalonado(i + 1)} className={cn('relative flex items-center gap-3', ENTRADA)}>
+          <li key={paso.titulo} style={{ animationDelay: `${150 + i * 200}ms` }} className={cn('relative flex items-center gap-3', ENTRADA)}>
             <span
               className={cn(
                 'z-10 flex size-8 items-center justify-center rounded-full border bg-background',
-                paso.hora && 'border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10',
+                paso.hora && 'border-primary/30 bg-primary/10 text-primary',
                 faltante && 'border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-500/40 dark:bg-amber-500/10',
               )}
             >
@@ -85,8 +87,8 @@ function DetalleDia({ fecha, dia, accion }: Props) {
       </div>
 
       {justificacion && (
-        <div className="space-y-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm dark:border-violet-500/30 dark:bg-violet-500/10">
-          <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">Motivo de la justificación</p>
+        <div className="space-y-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:border-blue-500/30 dark:bg-blue-500/10">
+          <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">Motivo de la justificación</p>
           <p className="break-words whitespace-pre-line">{justificacion.Justificacion}</p>
           {justificacion.JustificadoPor && (
             <p className="text-xs text-muted-foreground">Justificó: {justificacion.JustificadoPor}</p>

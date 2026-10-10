@@ -29,7 +29,7 @@ function Segmentos<T extends string>({ opciones, valor, onCambio, etiqueta, clas
             className={cn(
               'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200 active:scale-95',
               elegida
-                ? 'bg-card text-indigo-700 shadow-sm dark:text-indigo-300'
+                ? 'bg-card text-primary shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >

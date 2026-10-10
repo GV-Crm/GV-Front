@@ -3,10 +3,13 @@ import { CircleAlertIcon, Loader2Icon, LockKeyholeIcon, LogInIcon, MailIcon } fr
 import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/auth/auth-context'
 import { ENTRADA } from '@/lib/animaciones'
 import { supabase } from '@/lib/supabase'
 
 function LoginPage() {
+  // true en cuanto se inicia sesión: el formulario se aleja y se desvanece mientras entra la bienvenida.
+  const { mostrarBienvenida: entrando } = useAuth()
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -28,15 +31,20 @@ function LoginPage() {
   return (
     // Fondo con dos manchas de color difuminadas para que no se vea todo blanco.
     <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background p-4">
-      <div aria-hidden className="absolute -top-32 -left-32 size-96 rounded-full bg-indigo-300/30 blur-3xl" />
-      <div aria-hidden className="absolute -right-32 -bottom-32 size-96 rounded-full bg-violet-300/30 blur-3xl" />
+      <div aria-hidden className="absolute -top-32 -left-32 size-96 rounded-full bg-blue-300/25 blur-3xl" />
+      <div aria-hidden className="absolute -right-32 -bottom-32 size-96 rounded-full bg-slate-300/40 blur-3xl" />
 
       <form
         onSubmit={handleSubmit}
-        className={cn('relative flex w-full max-w-sm flex-col gap-4 rounded-2xl border bg-card/90 p-6 shadow-xl backdrop-blur', ENTRADA)}
+        className={cn(
+          'relative flex w-full max-w-sm flex-col gap-4 rounded-2xl border bg-card/90 p-6 shadow-xl backdrop-blur',
+          entrando
+            ? 'motion-safe:animate-out motion-safe:fade-out-0 motion-safe:zoom-out-90 motion-safe:blur-sm motion-safe:duration-500 motion-safe:fill-mode-forwards'
+            : ENTRADA,
+        )}
       >
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-500 to-violet-500 text-lg font-bold text-white shadow-lg shadow-indigo-500/30">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground shadow-lg shadow-primary/25">
             GV
           </span>
           <div>

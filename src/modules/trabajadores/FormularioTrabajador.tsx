@@ -52,7 +52,7 @@ function FormularioTrabajador({ areas, onCreado }: Props) {
 
   return (
     <Sheet open={abierto} onOpenChange={cambiarAbierto}>
-      <SheetTrigger render={<Button size="lg" className="bg-indigo-600 text-white hover:bg-indigo-700" />}>
+      <SheetTrigger render={<Button size="lg" />}>
         <UserPlusIcon data-icon="inline-start" />
         Nuevo trabajador
       </SheetTrigger>

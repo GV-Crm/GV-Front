@@ -49,7 +49,7 @@ function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: 
 
   return (
     <Sheet open={abierto} onOpenChange={cambiarAbierto}>
-      <SheetTrigger render={<Button className="bg-indigo-600 text-white hover:bg-indigo-700" />}>
+      <SheetTrigger render={<Button />}>
         <UserPlusIcon data-icon="inline-start" />
         Nueva cuenta
       </SheetTrigger>

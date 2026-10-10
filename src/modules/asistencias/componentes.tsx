@@ -10,11 +10,24 @@ export function EstatusBadge({ activo }: { activo: boolean }) {
   )
 }
 
-/** Etiqueta de color con el estado del día. `soloIconoEnMovil`: en pantallas chicas solo se ve el ícono. */
-export function EstadoBadge({ estado, soloIconoEnMovil = false }: { estado: EstadoDia; soloIconoEnMovil?: boolean }) {
+/**
+ * Etiqueta con el estado del día.
+ * - `soloIconoEnMovil`: en pantallas chicas solo se ve el ícono.
+ * - `color`: clases de color que reemplazan al color del estado, para que la etiqueta tome el color de su
+ *   sección (ver src/lib/colores-seccion.ts). El ícono y el texto siguen diciendo cuál es el estado.
+ */
+export function EstadoBadge({
+  estado,
+  soloIconoEnMovil = false,
+  color,
+}: {
+  estado: EstadoDia
+  soloIconoEnMovil?: boolean
+  color?: string
+}) {
   const estilo = ESTADOS[estado]
   return (
-    <Badge className={estilo.badge} title={estilo.descripcion}>
+    <Badge className={color ?? estilo.badge} title={estilo.descripcion}>
       <estilo.icono data-icon="inline-start" />
       <span className={soloIconoEnMovil ? 'sr-only sm:not-sr-only' : undefined}>{estilo.etiqueta}</span>
     </Badge>

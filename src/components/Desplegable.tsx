@@ -25,9 +25,9 @@ function Desplegable({ titulo, icono: Icono, resumen, soloEnMovil = false, abier
   if (soloEnMovil && pantallaGrande) return <>{children}</>
 
   return (
-    <Collapsible.Root defaultOpen={abiertoAlInicio} className={cn('rounded-xl border bg-card shadow-xs', className)}>
+    <Collapsible.Root defaultOpen={abiertoAlInicio} className={cn('rounded-xl border bg-card', className)}>
       <Collapsible.Trigger className="group flex w-full items-center gap-3 rounded-xl p-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icono className="size-4" />
         </span>
         <span className="min-w-0 flex-1">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
@@ -24,6 +24,8 @@ import { actualizarChecador, getChecadores, type Checador, type EstadoChecadores
 import Ayuda from '@/components/Ayuda'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
+import { conTransicion } from '@/lib/transicion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,14 +33,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 /** Cada cuánto se vuelve a preguntar el estado al backend. */
 const SEGUNDOS_ENTRE_ACTUALIZACIONES = 15
 
-/** Qué significa cada "Estado" de una marca (lo manda el checador). */
-const TIPOS_DE_MARCA: Record<number, { texto: string; color: string }> = {
-  0: { texto: 'Entrada', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300' },
-  1: { texto: 'Salida', color: 'bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300' },
-  2: { texto: 'Sale a descanso', color: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300' },
-  3: { texto: 'Regresa de descanso', color: 'bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300' },
-  4: { texto: 'Entrada extra', color: 'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300' },
-  5: { texto: 'Salida extra', color: 'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300' },
+/** Qué significa cada "Estado" de una marca (lo manda el checador). Todas van en el color de la sección. */
+const TIPOS_DE_MARCA: Record<number, { texto: string }> = {
+  0: { texto: 'Entrada' },
+  1: { texto: 'Salida' },
+  2: { texto: 'Sale a descanso' },
+  3: { texto: 'Regresa de descanso' },
+  4: { texto: 'Entrada extra' },
+  5: { texto: 'Salida extra' },
 }
 
 /** Cómo se identificó la persona en el checador. */
@@ -98,7 +100,7 @@ function SinChecadores() {
   return (
     <section className={cn('rounded-xl border border-dashed bg-card p-5 sm:p-6', ENTRADA)}>
       <div className="flex flex-col items-center gap-3 text-center">
-        <span className="flex size-14 items-center justify-center rounded-full bg-sky-100 text-sky-700 motion-safe:animate-pulse dark:bg-sky-500/20 dark:text-sky-300">
+        <span className={cn('flex size-14 items-center justify-center rounded-full motion-safe:animate-pulse', COLOR_SECCION.dispositivos.suave)}>
           <ScanFaceIcon className="size-7" />
         </span>
         <p className="font-medium">Todavía no se ha conectado ningún checador</p>
@@ -107,7 +109,7 @@ function SinChecadores() {
       <ol className="mx-auto mt-5 max-w-lg space-y-3">
         {pasos.map((paso, i) => (
           <li key={i} style={retrasoEscalonado(i + 1)} className={cn('flex gap-3 text-sm', ENTRADA)}>
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold', COLOR_SECCION.dispositivos.suave)}>
               {i + 1}
             </span>
             <span className="text-muted-foreground">{paso}</span>
@@ -154,7 +156,7 @@ function TarjetaChecador({ checador, onCambio }: { checador: Checador; onCambio:
   const firmware = checador.Info?.split(',')[0]
 
   return (
-    <article className={cn('overflow-hidden rounded-xl border bg-card shadow-xs', ENTRADA)}>
+    <article className={cn('overflow-hidden rounded-xl border bg-card', ENTRADA)}>
       <div className="flex items-center gap-4 p-4">
         {/* Indicador: verde y "latiendo" si está conectado; gris si no. */}
         <span className="relative flex size-12 shrink-0 items-center justify-center">
@@ -194,7 +196,7 @@ function TarjetaChecador({ checador, onCambio }: { checador: Checador; onCambio:
                 type="button"
                 aria-label="Cambiar nombre"
                 title="Cambiar nombre"
-                className="text-muted-foreground transition-colors hover:text-indigo-600"
+                className="text-muted-foreground transition-colors hover:text-primary"
                 onClick={() => setEditandoNombre(true)}
               >
                 <PencilIcon className="size-3.5" />
@@ -253,8 +255,8 @@ function FilaMarca({ marca, posicion, nombreChecador }: { marca: Marca; posicion
   const IconoVerificacion = verificacion?.icono ?? ScanFaceIcon
 
   return (
-    <li style={retrasoEscalonado(posicion)} className={cn('flex items-center gap-3 p-3 sm:px-4', ENTRADA)}>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+    <li style={{ ...retrasoEscalonado(posicion), viewTransitionName: `marca-${marca.id}` }} className={cn('flex items-center gap-3 p-3 sm:px-4', ENTRADA)}>
+      <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold', COLOR_SECCION.dispositivos.suave)}>
         #{marca.PIN}
       </span>
       <div className="min-w-0 flex-1">
@@ -267,7 +269,7 @@ function FilaMarca({ marca, posicion, nombreChecador }: { marca: Marca; posicion
       <span title={verificacion?.texto ?? `Código ${marca.Verificacion}`} className="text-muted-foreground">
         <IconoVerificacion className="size-4" />
       </span>
-      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tipo?.color ?? 'bg-muted text-muted-foreground')}>
+      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', COLOR_SECCION.dispositivos.suave)}>
         {tipo?.texto ?? 'Marca'}
       </span>
     </li>
@@ -279,11 +281,18 @@ function ChecadorPage() {
   const [datos, setDatos] = useState<EstadoChecadores | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [actualizando, setActualizando] = useState(false)
+  // Id de la marca más reciente que ya se mostró, para saber si llegaron nuevas.
+  const ultimaMarca = useRef<number | null>(null)
 
   const pedirEstado = useCallback(() => {
     getChecadores()
       .then((nuevos) => {
-        setDatos(nuevos)
+        const masReciente = nuevos.marcas[0]?.id ?? null
+        const llegaronNuevas = ultimaMarca.current !== null && masReciente !== ultimaMarca.current
+        ultimaMarca.current = masReciente
+        // Solo se anima si llegaron marcas: las anteriores bajan deslizándose y la nueva aparece arriba.
+        if (llegaronNuevas) conTransicion(() => setDatos(nuevos))
+        else setDatos(nuevos)
         setError(null)
       })
       .catch((err: Error) => setError(err.message))
@@ -304,12 +313,10 @@ function ChecadorPage() {
   const variosChecadores = (datos?.checadores.length ?? 0) > 1
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6">
+    <div className="flex flex-col gap-6 sm:gap-8">
       <EncabezadoPagina
         icono={ScanFaceIcon}
-        color="bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300"
         titulo="Checador"
-        descripcion="Revisa si el checador está conectado y qué marcas está mandando."
         acciones={
           <Button
             variant="outline"
@@ -341,8 +348,8 @@ function ChecadorPage() {
             </section>
 
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <FingerprintIcon className="size-4 text-indigo-500" />
+              <h2 className="flex items-center gap-2 text-base font-semibold">
+                <FingerprintIcon className={cn('size-4', COLOR_SECCION.dispositivos.texto)} />
                 Últimas marcas recibidas
                 <Ayuda>
                   Así llegan del checador, antes de convertirse en asistencias. "Usuario" es el número que tiene la
@@ -354,7 +361,7 @@ function ChecadorPage() {
                   Todavía no llega ninguna marca. Haz una prueba en el checador (con el equipo ya autorizado).
                 </p>
               ) : (
-                <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
+                <ul className="divide-y overflow-hidden rounded-xl border bg-card">
                   {datos.marcas.map((m, i) => (
                     <FilaMarca
                       key={m.id}

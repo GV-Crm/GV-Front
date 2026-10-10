@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from 'cn'
 import { useModulosPermitidos } from '@/modulos'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import UsuarioMenu from '@/components/UsuarioMenu'
 import {
   Sidebar as SidebarRoot,
@@ -49,19 +50,16 @@ function Sidebar() {
                       // En móvil el menú es un panel encima del contenido: se cierra al navegar.
                       render={<Link to={modulo.ruta} onClick={() => setOpenMobile(false)} />}
                     >
+                      {/* El menú usa un solo color (el de su sección); el módulo abierto va en tono fuerte. */}
                       <span
                         className={cn(
-                          'flex size-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200',
-                          modulo.color,
-                          activo && 'scale-110 shadow-sm',
+                          'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
+                          activo ? COLOR_SECCION.menu.fuerte : COLOR_SECCION.menu.suave,
                         )}
                       >
                         <modulo.icono className="size-4" />
                       </span>
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{modulo.nombre}</span>
-                        <span className="block truncate text-xs font-normal text-muted-foreground">{modulo.descripcion}</span>
-                      </span>
+                      <span className="min-w-0 truncate font-medium">{modulo.nombre}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -73,7 +71,7 @@ function Sidebar() {
 
       <SidebarFooter className="p-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex size-6 items-center justify-center rounded-md bg-linear-to-br from-indigo-500 to-violet-500 text-[10px] font-bold text-white">
+          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
             GV
           </span>
           GV One

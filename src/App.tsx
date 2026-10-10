@@ -32,7 +32,7 @@ function BarraSuperior() {
       <SidebarTrigger />
       {modulo && (
         <div key={modulo.ruta} className={cn('flex min-w-0 items-center gap-2', ENTRADA)}>
-          <span className={cn('flex size-7 items-center justify-center rounded-lg', modulo.color)}>
+          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <modulo.icono className="size-4" />
           </span>
           <span className="truncate text-sm font-semibold">{modulo.nombre}</span>
@@ -78,27 +78,30 @@ function AppLayout() {
 function App() {
   const { session, perfil, errorPerfil, cargando, mostrarBienvenida, cerrarBienvenida } = useAuth()
 
-  if (cargando) return null
+  // Al abrir la app (o al recargar) no se dibuja nada hasta saber si hay sesión.
+  // Pero si recién se inició sesión, el login se queda en pantalla mientras llega el perfil,
+  // para que la bienvenida aparezca encima de él y no se vea un salto.
+  if (cargando && !mostrarBienvenida) return null
 
   return (
     <>
-      {/* Presentación al iniciar sesión; la app ya se carga detrás y aparece cuando se cierra. */}
-      {mostrarBienvenida && perfil && <Bienvenida perfil={perfil} onTerminar={cerrarBienvenida} />}
+      {/* Presentación al iniciar sesión. Solo si la cuenta tiene acceso (o mientras se comprueba). */}
+      {mostrarBienvenida && (cargando || perfil) && <Bienvenida perfil={perfil} onTerminar={cerrarBienvenida} />}
 
       <Routes>
-      <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route
-        path="*"
-        element={
-          !session ? (
-            <Navigate to="/login" replace />
-          ) : perfil ? (
-            <AppLayout />
-          ) : (
-            <SinAcceso correo={session.user.email} mensaje={errorPerfil} />
-          )
-        }
-      />
+        <Route path="/login" element={session && !cargando ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route
+          path="*"
+          element={
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : cargando ? null : perfil ? (
+              <AppLayout />
+            ) : (
+              <SinAcceso correo={session.user.email} mensaje={errorPerfil} />
+            )
+          }
+        />
       </Routes>
     </>
   )

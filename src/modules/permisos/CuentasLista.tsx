@@ -5,6 +5,7 @@ import { cambiarRolDeCuenta, getCuentas, type Cuenta } from './api'
 import { CLASES_SELECT } from './estilos'
 import NuevaCuenta from './NuevaCuenta'
 import Avatar from '@/components/Avatar'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -74,13 +75,13 @@ function CuentasLista() {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <KeyRoundIcon className="size-4 text-violet-500" />
+          <KeyRoundIcon className={cn('size-4', COLOR_SECCION.personas.texto)} />
           {cuentas.length} cuentas con acceso
         </p>
         <NuevaCuenta roles={roles} onCreada={(nueva) => setCuentas((lista) => [...lista!, nueva])} />
       </div>
 
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {cuentas.map((cuenta, i) => (
           <li
             key={cuenta.id}
@@ -88,7 +89,7 @@ function CuentasLista() {
             className={cn('flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:px-4', ENTRADA)}
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar nombre={cuenta.Nombre ?? cuenta.Correo} />
+              <Avatar nombre={cuenta.Nombre ?? cuenta.Correo} className={COLOR_SECCION.personas.suave} />
               <div className="min-w-0">
                 <p className="truncate font-medium">{cuenta.Nombre ?? 'Sin nombre'}</p>
                 <p className="truncate text-xs text-muted-foreground">{cuenta.Correo}</p>

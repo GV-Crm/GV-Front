@@ -10,10 +10,12 @@ import DescargarReporte from './DescargarReporte'
 import { EstadoBadge, EstatusBadge } from './componentes'
 import { ESTADOS } from './estados'
 import Avatar from '@/components/Avatar'
+import Cifra from '@/components/Cifra'
 import Ayuda from '@/components/Ayuda'
 import Desplegable from '@/components/Desplegable'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import { ELEVAR_AL_PASAR, ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { sinAcentos } from '@/lib/texto'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,15 +34,15 @@ function TarjetasDeHoy({ estadoHoy }: { estadoHoy: Map<string, EstadoDia> }) {
                     <div
                         key={estado}
                         style={retrasoEscalonado(i)}
-                        className={cn('flex items-center gap-3 rounded-xl border bg-card p-3 shadow-xs sm:p-4', ENTRADA, ELEVAR_AL_PASAR)}
+                        className={cn('flex items-center gap-3 rounded-xl border bg-card p-3 sm:p-4', ENTRADA, ELEVAR_AL_PASAR)}
                     >
-                        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', estilo.badge)}>
+                        {/* Todas las tarjetas del resumen usan el color de su sección (ver src/lib/colores-seccion.ts). */}
+                        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', COLOR_SECCION.indicadores.suave)}>
                             <estilo.icono className="size-5" />
                         </span>
                         <div className="min-w-0">
-                            <p className="text-2xl font-semibold tabular-nums">{total}</p>
+                            <p><Cifra valor={total} className="text-3xl" /></p>
                             <p className="truncate text-xs font-medium">{estilo.etiqueta}</p>
-                            <p className="hidden truncate text-xs text-muted-foreground sm:block">{estilo.descripcion}</p>
                         </div>
                     </div>
                 )
@@ -99,12 +101,10 @@ function AsistenciasHome() {
             .join(' · ')
 
     return (
-        <div className="flex flex-1 flex-col gap-4 sm:gap-6">
+        <div className="flex flex-1 flex-col gap-6 sm:gap-8">
             <EncabezadoPagina
                 icono={CalendarCheck}
-                color="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
                 titulo="Asistencias"
-                descripcion="Elige a un empleado para ver su calendario, sus faltas y justificaciones."
                 acciones={
                     <DescargarReporte
                         titulo="Reporte mensual de asistencias"
@@ -116,8 +116,8 @@ function AsistenciasHome() {
 
             {estadoHoy && (
                 <section className="space-y-3">
-                    <h2 className="hidden items-center gap-2 text-sm font-semibold sm:flex">
-                        <SunIcon className="size-4 text-amber-500" />
+                    <h2 className="hidden items-center gap-2 text-base font-semibold sm:flex">
+                        <SunIcon className={cn('size-4', COLOR_SECCION.indicadores.texto)} />
                         <span className="first-letter:uppercase">Hoy, {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}</span>
                         <Ayuda>Cuántos empleados activos hay hoy en cada situación. Se actualiza al abrir esta pantalla.</Ayuda>
                     </h2>
@@ -130,8 +130,8 @@ function AsistenciasHome() {
 
             <section className="space-y-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="flex items-center gap-2 text-sm font-semibold">
-                        <UsersIcon className="size-4 text-indigo-500" />
+                    <h2 className="flex items-center gap-2 text-base font-semibold">
+                        <UsersIcon className={cn('size-4', COLOR_SECCION.personas.texto)} />
                         Empleados
                         {!loading && <span className="font-normal text-muted-foreground">({visibles.length})</span>}
                     </h2>
@@ -170,7 +170,7 @@ function AsistenciasHome() {
                         <p className="font-medium">{busqueda ? 'Nadie coincide con tu búsqueda' : 'Todavía no hay empleados registrados'}</p>
                     </div>
                 ) : (
-                    <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
+                    <ul className="divide-y overflow-hidden rounded-xl border bg-card">
                         {visibles.map((e, i) => {
                             const hoy = estadoHoy?.get(e.Uuid)
                             return (
@@ -178,11 +178,11 @@ function AsistenciasHome() {
                                     <Link
                                         to={`/asistencias/${e.Uuid}`}
                                         className={cn(
-                                            'group flex items-center gap-3 p-3 transition-colors hover:bg-indigo-50/60 sm:px-4 dark:hover:bg-indigo-500/5',
+                                            'group flex items-center gap-3 p-3 transition-colors hover:bg-muted/50 sm:px-4',
                                             !e.Activo && 'opacity-70',
                                         )}
                                     >
-                                        <Avatar nombre={e.Nombre} className={cn(!e.Activo && 'grayscale')} />
+                                        <Avatar nombre={e.Nombre} className={cn(COLOR_SECCION.personas.suave, !e.Activo && 'grayscale')} />
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
                                                 <p className="truncate font-medium">{e.Nombre}</p>
@@ -190,8 +190,8 @@ function AsistenciasHome() {
                                             </div>
                                             <p className="truncate text-xs text-muted-foreground">{e.Area?.trim() || 'Sin área'}</p>
                                         </div>
-                                        {hoy && <EstadoBadge estado={hoy} soloIconoEnMovil />}
-                                        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-indigo-600" />
+                                        {hoy && <EstadoBadge estado={hoy} soloIconoEnMovil color={COLOR_SECCION.personas.suave} />}
+                                        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-foreground" />
                                     </Link>
                                 </li>
                             )
