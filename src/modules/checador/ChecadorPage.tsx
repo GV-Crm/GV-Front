@@ -124,7 +124,7 @@ function SinChecadores() {
       </div>
       <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
         <BookOpenIcon className="size-3.5" />
-        Paso a paso completo: INSTRUCTIVO-CHECADOR.txt (en el repositorio del backend)
+        Paso a paso completo: INSTRUCTIVO-CHECADOR.txt (pídelo al administrador del sistema)
       </p>
     </section>
   )
