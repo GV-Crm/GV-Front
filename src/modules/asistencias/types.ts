@@ -5,6 +5,8 @@ export interface Empleado {
   Area: string
   Activo: boolean
   Ingreso: string | null
+  /** URL de la foto del trabajador, o null si se muestran sus iniciales. */
+  Foto: string | null
 }
 
 export interface EstadoAsistencia {
@@ -41,6 +43,7 @@ export interface EmpleadoDetalle {
   Area: string
   Activo: boolean
   Ingreso: string | null
+  Foto: string | null
   Asistencias: Registro[]
 }
 

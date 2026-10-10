@@ -2,8 +2,17 @@ import { createContext, useContext } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { Regla } from './permisos'
 
-/** Lo que responde /api/yo: quién es el usuario y qué puede hacer. */
-export type Perfil = { correo: string; nombre: string | null; rol: string; reglas: Regla[] }
+/** Lo que responde /api/yo: quién es el usuario, su foto y qué puede hacer. */
+export type Perfil = {
+  /** Id de su cuenta en la tabla Roles. */
+  cuentaId: number
+  correo: string
+  nombre: string | null
+  /** URL de su foto de perfil, o null si usa sus iniciales. */
+  avatar: string | null
+  rol: string
+  reglas: Regla[]
+}
 
 export type AuthState = {
   session: Session | null
@@ -14,6 +23,8 @@ export type AuthState = {
   /** true justo después de iniciar sesión (no al recargar): se muestra la pantalla de bienvenida. */
   mostrarBienvenida: boolean
   cerrarBienvenida: () => void
+  /** Vuelve a pedir el perfil (por ejemplo, después de cambiar tu nombre o tu foto). */
+  recargarPerfil: () => void
 }
 
 export const AuthContext = createContext<AuthState | null>(null)

@@ -182,7 +182,7 @@ function AsistenciasHome() {
                                             !e.Activo && 'opacity-70',
                                         )}
                                     >
-                                        <Avatar nombre={e.Nombre} className={cn(COLOR_SECCION.personas.suave, !e.Activo && 'grayscale')} />
+                                        <Avatar nombre={e.Nombre} foto={e.Foto} className={cn(COLOR_SECCION.personas.suave, !e.Activo && 'grayscale')} />
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
                                                 <p className="truncate font-medium">{e.Nombre}</p>

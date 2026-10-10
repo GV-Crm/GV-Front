@@ -272,3 +272,52 @@
   }
   ::view-transition-group(*) { animation: none; }
 }
+
+/* ============================================================
+ * Marca "GV One" del menú lateral (src/components/MarcaGV.tsx)
+ * ============================================================ */
+.marca {
+  font-family: var(--font-heading);
+  /* Un poco más grande que los nombres de los módulos del menú (que miden 14 px). */
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  width: fit-content;
+}
+.marca-gv { font-weight: 800; }
+.marca-one { font-weight: 450; transition: font-weight 0.35s ease; }
+
+/* Cada letra se mueve por su cuenta; --i es su turno para que salgan en ola. */
+.marca-letra {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+  transition-delay: calc(var(--i) * 35ms);
+}
+
+/* Al pasar el mouse: ola hacia arriba, "One" engrosa y todo toma el color principal. */
+.marca:hover .marca-letra,
+.marca:focus-visible .marca-letra {
+  transform: translateY(-2px);
+  color: var(--primary);
+}
+.marca:hover .marca-one,
+.marca:focus-visible .marca-one { font-weight: 700; }
+
+/* Al hacer clic: cada letra da un salto con un pequeño giro, una tras otra. */
+@keyframes marca-saltar {
+  0% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-6px) rotate(-8deg); }
+  65% { transform: translateY(1px) rotate(3deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+.marca-saltando .marca-letra {
+  animation: marca-saltar 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca-letra { transition: color 0.3s ease; }
+  .marca:hover .marca-letra { transform: none; }
+  .marca-saltando .marca-letra { animation: none; }
+}

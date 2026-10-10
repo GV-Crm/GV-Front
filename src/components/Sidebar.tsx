@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { cn } from 'cn'
 import { useModulosPermitidos } from '@/modulos'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
+import MarcaGV from '@/components/MarcaGV'
 import UsuarioMenu from '@/components/UsuarioMenu'
 import {
   Sidebar as SidebarRoot,
@@ -69,13 +70,9 @@ function Sidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
-            GV
-          </span>
-          GV One
-        </div>
+      {/* Abajo: el nombre del sistema, pegado a la izquierda como los módulos. */}
+      <SidebarFooter className="px-3 py-4">
+        <MarcaGV onClick={() => setOpenMobile(false)} />
       </SidebarFooter>
 
       <SidebarRail />

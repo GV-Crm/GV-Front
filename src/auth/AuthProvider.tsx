@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [mostrarBienvenida, setMostrarBienvenida] = useState(false)
   const habiaSesion = useRef(false)
   const cerrarBienvenida = useCallback(() => setMostrarBienvenida(false), [])
+  const recargarPerfil = useCallback(() => setVersion((v) => v + 1), [])
 
   useEffect(() => {
     // El primer evento (INITIAL_SESSION) trae la sesión guardada, así que también marca el fin de la carga.
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         cargando: cargandoSesion || (Boolean(usuarioId) && !actual),
         mostrarBienvenida,
         cerrarBienvenida,
+        recargarPerfil,
       }}
     >
       <AbilityProvider value={ability}>{children}</AbilityProvider>

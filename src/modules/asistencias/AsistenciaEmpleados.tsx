@@ -219,7 +219,7 @@ function AsistenciaDetalle() {
                     >
                         <ArrowLeftIcon />
                     </Button>
-                    <Avatar nombre={empleado.Nombre} className={cn(COLOR_SECCION.personas.suave, 'size-10 sm:size-12 sm:text-base')} />
+                    <Avatar nombre={empleado.Nombre} foto={empleado.Foto} className={cn(COLOR_SECCION.personas.suave, 'size-10 sm:size-12 sm:text-base')} />
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h1 className="truncate text-base font-semibold sm:text-xl">{empleado.Nombre}</h1>

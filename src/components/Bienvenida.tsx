@@ -101,7 +101,7 @@ function Bienvenida({ perfil, onTerminar }: { perfil: Perfil | null; onTerminar:
               aria-hidden
               className="bienvenida-arco absolute -inset-3 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,#0f172a_300deg,transparent_360deg)]"
             />
-            <Avatar nombre={nombre} className="relative size-28 text-4xl shadow-2xl shadow-slate-900/15 sm:size-32 sm:text-5xl" />
+            <Avatar nombre={nombre} foto={perfil.avatar} className="relative size-28 text-4xl shadow-2xl shadow-slate-900/15 sm:size-32 sm:text-5xl" />
           </div>
 
           <p style={despues(350)} className="bienvenida-subir text-xs font-semibold tracking-[0.4em] text-slate-400 uppercase sm:text-sm">

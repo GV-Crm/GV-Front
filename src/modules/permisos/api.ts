@@ -7,7 +7,8 @@ export type Permiso = { accion: Accion; recurso: Recurso }
 /** `bloqueado` trae el motivo si el usuario no puede editar ese rol (p. ej. es su propio rol). */
 export type RolConPermisos = { rol: string; permisos: Permiso[]; bloqueado: string | null }
 
-export type Cuenta = { id: number; Nombre: string | null; Correo: string; Rol: string; bloqueado: string | null }
+/** `Avatar` es la URL de su foto de perfil (o null si usa sus iniciales). */
+export type Cuenta = { id: number; Nombre: string | null; Correo: string; Rol: string; Avatar: string | null; bloqueado: string | null }
 
 export function getPermisos(): Promise<{ catalogo: PermisoDelCatalogo[]; roles: RolConPermisos[] }> {
   return pedirJson('/api/permisos')

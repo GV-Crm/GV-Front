@@ -89,7 +89,7 @@ function CuentasLista() {
             className={cn('flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:px-4', ENTRADA)}
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar nombre={cuenta.Nombre ?? cuenta.Correo} className={COLOR_SECCION.personas.suave} />
+              <Avatar nombre={cuenta.Nombre ?? cuenta.Correo} foto={cuenta.Avatar} className={COLOR_SECCION.personas.suave} />
               <div className="min-w-0">
                 <p className="truncate font-medium">{cuenta.Nombre ?? 'Sin nombre'}</p>
                 <p className="truncate text-xs text-muted-foreground">{cuenta.Correo}</p>

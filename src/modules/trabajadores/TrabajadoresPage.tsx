@@ -13,7 +13,10 @@ import {
 } from 'lucide-react'
 import { cn } from 'cn'
 import { cambiarActivo } from './api'
+import EditarTrabajador from './EditarTrabajador'
 import FormularioTrabajador from './FormularioTrabajador'
+import { usePuede } from '@/auth/permisos'
+import { SiPuede } from '@/auth/SiPuede'
 import { getEmpleados } from '@/modules/asistencias/api'
 import { EstatusBadge } from '@/modules/asistencias/componentes'
 import { fechaDesdeClave } from '@/modules/asistencias/formatHora'
@@ -41,11 +44,16 @@ function fechaIngreso(ingreso: string | null) {
   return ingreso ? format(fechaDesdeClave(ingreso), 'd MMM yyyy', { locale: es }) : 'Sin fecha'
 }
 
+type PropsFila = { empleado: Empleado; posicion: number; areas: string[]; onCambio: (e: Empleado) => void }
+
 /**
- * Un trabajador de la lista. El botón de la derecha da de baja o reactiva;
- * antes de guardar se despliega abajo una confirmación (sin ventanas emergentes).
+ * Un trabajador de la lista. A la derecha:
+ * - Lápiz para editar su perfil (permiso "editar Empleado").
+ * - Botón para dar de baja o reactivar (permiso "gestionar Empleado"); antes de guardar
+ *   se despliega abajo una confirmación (sin ventanas emergentes).
  */
-function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; posicion: number; onCambio: (e: Empleado) => void }) {
+function FilaTrabajador({ empleado, posicion, areas, onCambio }: PropsFila) {
+  const puedeDarDeBaja = usePuede('gestionar', 'Empleado')
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +81,7 @@ function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; 
       style={{ ...retrasoEscalonado(posicion), viewTransitionName: `trabajador-${empleado.Uuid}` }}
       className={cn(ENTRADA, !empleado.Activo && 'bg-muted/30')}>
       <div className="flex items-center gap-3 p-3 sm:px-4">
-        <Avatar nombre={empleado.Nombre} className={cn(COLOR_SECCION.personas.suave, !empleado.Activo && 'grayscale')} />
+        <Avatar nombre={empleado.Nombre} foto={empleado.Foto} className={cn(COLOR_SECCION.personas.suave, !empleado.Activo && 'grayscale')} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium">{empleado.Nombre}</p>
@@ -86,7 +94,10 @@ function FilaTrabajador({ empleado, posicion, onCambio }: { empleado: Empleado; 
             {fechaIngreso(empleado.Ingreso)}
           </p>
         </div>
-        {!confirmando && (
+        <SiPuede accion="editar" recurso="Empleado">
+          <EditarTrabajador empleado={empleado} areas={areas} onCambio={onCambio} />
+        </SiPuede>
+        {puedeDarDeBaja && !confirmando && (
           // En el celular solo el ícono; en pantallas grandes, ícono y texto.
           <Button
             variant={darDeBaja ? 'destructive' : 'outline'}
@@ -176,7 +187,11 @@ function TrabajadoresPage() {
       <EncabezadoPagina
         icono={UserCogIcon}
         titulo="Trabajadores"
-        acciones={<FormularioTrabajador areas={areas} onCreado={(nuevo) => setEmpleados((lista) => [...lista, nuevo])} />}
+        acciones={
+          <SiPuede accion="gestionar" recurso="Empleado">
+            <FormularioTrabajador areas={areas} onCreado={(nuevo) => setEmpleados((lista) => [...lista, nuevo])} />
+          </SiPuede>
+        }
       />
 
       {!cargando && !error && (
@@ -223,7 +238,7 @@ function TrabajadoresPage() {
       ) : (
         <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {visibles.map((e, i) => (
-            <FilaTrabajador key={e.Uuid} empleado={e} posicion={i} onCambio={reemplazar} />
+            <FilaTrabajador key={e.Uuid} empleado={e} posicion={i} areas={areas} onCambio={reemplazar} />
           ))}
         </ul>
       )}

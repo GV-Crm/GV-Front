@@ -7,6 +7,7 @@ import {
   ScanFaceIcon,
   ShieldCheckIcon,
   UserCogIcon,
+  UserPenIcon,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -20,7 +21,7 @@ import {
  * Si agregas un permiso, agrégalo también en el backend (gv-one: src/lib/permisos/catalogo.ts).
  */
 
-export type Accion = 'ver' | 'justificar' | 'gestionar'
+export type Accion = 'ver' | 'justificar' | 'gestionar' | 'editar'
 export type Recurso = 'Asistencia' | 'Falta' | 'Empleado' | 'Permiso' | 'Checador' | 'Inventario'
 
 /** 'manage' y 'all' son palabras especiales de CASL: "cualquier acción" y "cualquier recurso" (rol Admin). */
@@ -33,6 +34,7 @@ export const PERMISOS: { accion: Accion; recurso: Recurso; texto: string; icono:
   { accion: 'ver', recurso: 'Asistencia', texto: 'Ver asistencias y reportes', icono: CalendarCheckIcon },
   { accion: 'justificar', recurso: 'Falta', texto: 'Justificar faltas', icono: FileCheckIcon },
   { accion: 'gestionar', recurso: 'Empleado', texto: 'Dar de alta y de baja trabajadores', icono: UserCogIcon },
+  { accion: 'editar', recurso: 'Empleado', texto: 'Editar el perfil de los trabajadores', icono: UserPenIcon },
   { accion: 'gestionar', recurso: 'Permiso', texto: 'Administrar permisos y cuentas', icono: ShieldCheckIcon },
   { accion: 'gestionar', recurso: 'Checador', texto: 'Revisar y autorizar el checador', icono: ScanFaceIcon },
   { accion: 'ver', recurso: 'Inventario', texto: 'Ver el inventario', icono: PackageIcon },

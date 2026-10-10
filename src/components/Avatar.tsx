@@ -10,8 +10,26 @@ function inicialesDe(nombre: string) {
     .join('')
 }
 
-/** Círculo con las iniciales de una persona. Todos usan el mismo color (el principal) para no saturar de colores. */
-function Avatar({ nombre, className }: { nombre: string; className?: string }) {
+type Props = {
+  nombre: string
+  /** URL de la foto de perfil. Si no hay, se muestran las iniciales. */
+  foto?: string | null
+  className?: string
+}
+
+/** Círculo con la foto de la persona o, si no tiene, sus iniciales. */
+function Avatar({ nombre, foto, className }: Props) {
+  if (foto) {
+    return (
+      <img
+        src={foto}
+        alt=""
+        aria-hidden
+        className={cn('size-9 shrink-0 rounded-full bg-muted object-cover', className)}
+      />
+    )
+  }
+
   return (
     <span
       aria-hidden

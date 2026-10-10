@@ -1,17 +1,19 @@
 import type { ComponentType } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAbility } from '@casl/react'
-import { CalendarCheck, Package, ScanFaceIcon, ShieldCheckIcon, UserCogIcon, type LucideIcon } from 'lucide-react'
+import { CalendarCheck, Package, ScanFaceIcon, ShieldCheckIcon, UserCogIcon, UserRoundIcon, type LucideIcon } from 'lucide-react'
 import type { Accion, AppAbility, Recurso } from '@/auth/permisos'
 import AsistenciasModulo from '@/modules/asistencias/AsistenciasModulo'
 import ChecadorPage from '@/modules/checador/ChecadorPage'
 import InventarioPage from '@/modules/inventario/InventarioPage'
+import PerfilPage from '@/modules/perfil/PerfilPage'
 import PermisosPage from '@/modules/permisos/PermisosPage'
 import TrabajadoresPage from '@/modules/trabajadores/TrabajadoresPage'
 
 /*
  * Lista de módulos del sistema.
- * Un módulo aparece en el menú, y su ruta existe, solo si el usuario tiene su permiso.
+ * Un módulo aparece en el menú, y su ruta existe, solo si el usuario tiene su permiso
+ * (los que no tienen `permiso`, como Mi perfil, los ve todo el mundo).
  *
  * Para agregar un módulo nuevo:
  *   1. Crea su carpeta en src/modules/ con su página.
@@ -25,8 +27,14 @@ export type Modulo = {
   ruta: string
   icono: LucideIcon
   pagina: ComponentType
-  permiso: { accion: Accion; recurso: Recurso }
+  /**
+   * Lo que se necesita para verlo. Sin permiso = lo ve cualquier usuario con sesión.
+   * Si es una lista, basta con tener UNO de esos permisos.
+   */
+  permiso?: Permiso | Permiso[]
 }
+
+type Permiso = { accion: Accion; recurso: Recurso }
 
 export const MODULOS: Modulo[] = [
   {
@@ -41,7 +49,11 @@ export const MODULOS: Modulo[] = [
     ruta: '/trabajadores',
     icono: UserCogIcon,
     pagina: TrabajadoresPage,
-    permiso: { accion: 'gestionar', recurso: 'Empleado' },
+    // Entra quien da de alta/baja o quien solo edita perfiles.
+    permiso: [
+      { accion: 'gestionar', recurso: 'Empleado' },
+      { accion: 'editar', recurso: 'Empleado' },
+    ],
   },
   {
     nombre: 'Permisos',
@@ -64,12 +76,22 @@ export const MODULOS: Modulo[] = [
     pagina: InventarioPage,
     permiso: { accion: 'ver', recurso: 'Inventario' },
   },
+  {
+    nombre: 'Mi perfil',
+    ruta: '/perfil',
+    icono: UserRoundIcon,
+    pagina: PerfilPage,
+  },
 ]
 
 /** Los módulos que el usuario actual puede abrir. */
 export function useModulosPermitidos(): Modulo[] {
   const ability = useAbility<AppAbility>()
-  return MODULOS.filter((modulo) => ability.can(modulo.permiso.accion, modulo.permiso.recurso))
+  return MODULOS.filter((modulo) => {
+    if (!modulo.permiso) return true
+    const permisos = Array.isArray(modulo.permiso) ? modulo.permiso : [modulo.permiso]
+    return permisos.some((p) => ability.can(p.accion, p.recurso))
+  })
 }
 
 /** El módulo en el que está el usuario ahora, según la dirección de la página. */
