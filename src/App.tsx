@@ -1,6 +1,7 @@
 import { Navigate, Routes, Route } from 'react-router-dom'
 import { LockKeyholeIcon } from 'lucide-react'
 import { cn } from 'cn'
+import Bienvenida from './components/Bienvenida'
 import Sidebar from './components/Sidebar'
 import UsuarioMenu from './components/UsuarioMenu'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
@@ -75,12 +76,16 @@ function AppLayout() {
 }
 
 function App() {
-  const { session, perfil, errorPerfil, cargando } = useAuth()
+  const { session, perfil, errorPerfil, cargando, mostrarBienvenida, cerrarBienvenida } = useAuth()
 
   if (cargando) return null
 
   return (
-    <Routes>
+    <>
+      {/* Presentación al iniciar sesión; la app ya se carga detrás y aparece cuando se cierra. */}
+      {mostrarBienvenida && perfil && <Bienvenida perfil={perfil} onTerminar={cerrarBienvenida} />}
+
+      <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route
         path="*"
@@ -94,7 +99,8 @@ function App() {
           )
         }
       />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 

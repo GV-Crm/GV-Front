@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AbilityProvider } from '@casl/react'
 import type { Session } from '@supabase/supabase-js'
 import { ErrorApi, EVENTO_PERMISO_NEGADO, pedirJson } from '@/lib/api'
@@ -18,10 +18,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Cada vez que cambia, se vuelven a pedir los permisos a /api/yo.
   const [version, setVersion] = useState(0)
   const ultimaCarga = useRef(0)
+  // true justo después de iniciar sesión, para mostrar la pantalla de bienvenida una sola vez.
+  const [mostrarBienvenida, setMostrarBienvenida] = useState(false)
+  const habiaSesion = useRef(false)
+  const cerrarBienvenida = useCallback(() => setMostrarBienvenida(false), [])
 
   useEffect(() => {
     // El primer evento (INITIAL_SESSION) trae la sesión guardada, así que también marca el fin de la carga.
-    const { data } = supabase.auth.onAuthStateChange((_evento, nueva) => {
+    const { data } = supabase.auth.onAuthStateChange((evento, nueva) => {
+      // Supabase también avisa SIGNED_IN al volver a la pestaña; solo cuenta si antes no había sesión.
+      if (evento === 'SIGNED_IN' && !habiaSesion.current) setMostrarBienvenida(true)
+      habiaSesion.current = Boolean(nueva)
+
       setSession(nueva)
       setCargandoSesion(false)
     })
@@ -97,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         perfil,
         errorPerfil: actual?.error ?? null,
         cargando: cargandoSesion || (Boolean(usuarioId) && !actual),
+        mostrarBienvenida,
+        cerrarBienvenida,
       }}
     >
       <AbilityProvider value={ability}>{children}</AbilityProvider>

@@ -11,6 +11,9 @@ export type AuthState = {
   perfil: Perfil | null
   errorPerfil: string | null
   cargando: boolean
+  /** true justo después de iniciar sesión (no al recargar): se muestra la pantalla de bienvenida. */
+  mostrarBienvenida: boolean
+  cerrarBienvenida: () => void
 }
 
 export const AuthContext = createContext<AuthState | null>(null)

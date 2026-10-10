@@ -1,9 +1,10 @@
 import type { ComponentType } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAbility } from '@casl/react'
-import { CalendarCheck, Package, ShieldCheckIcon, UserCogIcon, type LucideIcon } from 'lucide-react'
+import { CalendarCheck, Package, ScanFaceIcon, ShieldCheckIcon, UserCogIcon, type LucideIcon } from 'lucide-react'
 import type { Accion, AppAbility, Recurso } from '@/auth/permisos'
 import AsistenciasModulo from '@/modules/asistencias/AsistenciasModulo'
+import ChecadorPage from '@/modules/checador/ChecadorPage'
 import InventarioPage from '@/modules/inventario/InventarioPage'
 import PermisosPage from '@/modules/permisos/PermisosPage'
 import TrabajadoresPage from '@/modules/trabajadores/TrabajadoresPage'
@@ -58,6 +59,15 @@ export const MODULOS: Modulo[] = [
     color: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
     pagina: PermisosPage,
     permiso: { accion: 'gestionar', recurso: 'Permiso' },
+  },
+  {
+    nombre: 'Checador',
+    descripcion: 'Conexión y marcas',
+    ruta: '/checador',
+    icono: ScanFaceIcon,
+    color: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+    pagina: ChecadorPage,
+    permiso: { accion: 'gestionar', recurso: 'Checador' },
   },
   {
     nombre: 'Inventario',
