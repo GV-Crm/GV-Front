@@ -7,6 +7,8 @@ export interface Empleado {
   Ingreso: string | null
   /** URL de la foto del trabajador, o null si se muestran sus iniciales. */
   Foto: string | null
+  /** ID con el que se registra en el checador (lo genera el sistema). Las marcas traen este número como PIN. */
+  PinChecador: number
 }
 
 export interface EstadoAsistencia {

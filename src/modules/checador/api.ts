@@ -22,6 +22,8 @@ export type Marca = {
   FechaHora: string
   Estado: number | null
   Verificacion: number | null
+  /** Trabajador cuyo ID de checador (PinChecador) es este PIN, o null si ninguno lo tiene. */
+  empleado: { Uuid: string; Nombre: string; Activo: boolean; Foto: string | null } | null
 }
 
 export type EstadoChecadores = {

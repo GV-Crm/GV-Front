@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import {
   CalendarDaysIcon,
   Loader2Icon,
+  ScanFaceIcon,
   SearchIcon,
   TriangleAlertIcon,
   UserCogIcon,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from 'cn'
 import { cambiarActivo } from './api'
+import DatosPersonalesTrabajador from './DatosPersonalesTrabajador'
 import EditarTrabajador from './EditarTrabajador'
 import FormularioTrabajador from './FormularioTrabajador'
 import { usePuede } from '@/auth/permisos'
@@ -92,8 +94,16 @@ function FilaTrabajador({ empleado, posicion, areas, onCambio }: PropsFila) {
             <span aria-hidden>·</span>
             <CalendarDaysIcon className="size-3" />
             {fechaIngreso(empleado.Ingreso)}
+            <span aria-hidden>·</span>
+            <ScanFaceIcon className="size-3" />
+            <span title="ID en el checador" className="font-mono">
+              {empleado.PinChecador}
+            </span>
           </p>
         </div>
+        <SiPuede accion="gestionar" recurso="DatosPersonales">
+          <DatosPersonalesTrabajador empleado={empleado} />
+        </SiPuede>
         <SiPuede accion="editar" recurso="Empleado">
           <EditarTrabajador empleado={empleado} areas={areas} onCambio={onCambio} />
         </SiPuede>
@@ -174,7 +184,7 @@ function TrabajadoresPage() {
     const texto = sinAcentos(busqueda.trim())
     return empleados
       .filter((e) => (filtro === 'todos' ? true : filtro === 'activos' ? e.Activo : !e.Activo))
-      .filter((e) => !texto || sinAcentos(`${e.Nombre} ${e.Area ?? ''}`).includes(texto))
+      .filter((e) => !texto || sinAcentos(`${e.Nombre} ${e.Area ?? ''} ${e.PinChecador}`).includes(texto))
       .sort((a, b) => a.Nombre.localeCompare(b.Nombre))
   }, [empleados, filtro, busqueda])
 
@@ -211,7 +221,7 @@ function TrabajadoresPage() {
         <div className="relative sm:w-72">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre o área"
+            placeholder="Buscar por nombre, área o ID"
             className="h-9 bg-card pl-8"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}

@@ -3,9 +3,38 @@ import type { Empleado } from '@/modules/asistencias/types'
 
 export type NuevoTrabajador = { Nombre: string; Area: string; Ingreso: string }
 
-/** Requiere el permiso "gestionar Empleado". */
-export function crearTrabajador(datos: NuevoTrabajador): Promise<Empleado> {
+export type ContactoEmergencia = { Nombre: string; Parentesco: string; Telefono: string }
+
+/** Datos sensibles: solo los ve quien tiene el permiso "gestionar DatosPersonales". Los vacíos llegan como null. */
+export type DatosPersonales = {
+  FechaNacimiento: string | null
+  Celular: string | null
+  Correo: string | null
+  CURP: string | null
+  RFC: string | null
+  NSS: string | null
+  Domicilio: string | null
+  ContactosEmergencia: ContactoEmergencia[]
+}
+
+export type DatosPersonalesGuardados = DatosPersonales & { ActualizadoEn: string | null; ActualizadoPor: string | null }
+
+/**
+ * Requiere el permiso "gestionar Empleado". `DatosPersonales` es opcional y requiere además
+ * "gestionar DatosPersonales". El sistema le asigna su ID de checador (`PinChecador`).
+ */
+export function crearTrabajador(datos: NuevoTrabajador & { DatosPersonales?: DatosPersonales }): Promise<Empleado> {
   return pedirJson('/api/empleados', { method: 'POST', body: datos })
+}
+
+/** Requiere el permiso "gestionar DatosPersonales". */
+export function getDatosPersonales(uuid: string): Promise<DatosPersonalesGuardados> {
+  return pedirJson(`/api/empleados/${uuid}/datos-personales`)
+}
+
+/** Reemplaza todos los datos personales. Si la CURP, RFC o NSS ya es de otro trabajador, responde con error. */
+export function guardarDatosPersonales(uuid: string, datos: DatosPersonales): Promise<DatosPersonalesGuardados> {
+  return pedirJson(`/api/empleados/${uuid}/datos-personales`, { method: 'PUT', body: datos })
 }
 
 /** `false` = dar de baja, `true` = reactivar. Requiere el permiso "gestionar Empleado". */

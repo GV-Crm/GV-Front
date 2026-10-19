@@ -15,12 +15,14 @@ import {
   ScanFaceIcon,
   ServerIcon,
   ShieldQuestionIcon,
+  UserRoundXIcon,
   WifiIcon,
   WifiOffIcon,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from 'cn'
 import { actualizarChecador, getChecadores, type Checador, type EstadoChecadores, type Marca } from './api'
+import Avatar from '@/components/Avatar'
 import Ayuda from '@/components/Ayuda'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
@@ -94,7 +96,7 @@ function BotonCopiar({ texto }: { texto: string }) {
 function SinChecadores() {
   const pasos = [
     'Conecta el checador a internet (cable o Wi-Fi).',
-    'En el checador: Menú → Comunicación → Servidor en la nube (ADMS). Escribe la dirección de abajo, puerto 443 y activa HTTPS.',
+    'En el checador: Menú → Red (o COMM.) → Conf. Srvr. de Nube. Modo ADMS, activa "Nombre de dominio", escribe la dirección de abajo, puerto 443 y activa HTTPS. Reinicia el equipo.',
     'En menos de un minuto aparecerá aquí como "equipo nuevo". Autorízalo y listo.',
   ]
   return (
@@ -256,12 +258,22 @@ function FilaMarca({ marca, posicion, nombreChecador }: { marca: Marca; posicion
 
   return (
     <li style={{ ...retrasoEscalonado(posicion), viewTransitionName: `marca-${marca.id}` }} className={cn('flex items-center gap-3 p-3 sm:px-4', ENTRADA)}>
-      <span className={cn('flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold', COLOR_SECCION.dispositivos.suave)}>
-        #{marca.PIN}
-      </span>
+      {marca.empleado ? (
+        <Avatar nombre={marca.empleado.Nombre} foto={marca.empleado.Foto} className={cn('size-9', COLOR_SECCION.dispositivos.suave)} />
+      ) : (
+        <span
+          title="Ningún trabajador tiene este ID de checador"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+        >
+          <UserRoundXIcon className="size-4" />
+        </span>
+      )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">Usuario {marca.PIN}</p>
+        <p className="truncate text-sm font-medium">
+          {marca.empleado ? marca.empleado.Nombre : <span className="text-amber-700 dark:text-amber-400">ID {marca.PIN} sin trabajador</span>}
+        </p>
         <p className="truncate text-xs text-muted-foreground">
+          {marca.empleado && <span className="font-mono">ID {marca.PIN} · </span>}
           {format(new Date(marca.FechaHora), "EEE d 'de' MMM · HH:mm:ss", { locale: es })}
           {nombreChecador && ` · ${nombreChecador}`}
         </p>

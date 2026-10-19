@@ -3,6 +3,7 @@ import { useAbility } from '@casl/react'
 import {
   CalendarCheckIcon,
   FileCheckIcon,
+  IdCardIcon,
   PackageIcon,
   ScanFaceIcon,
   ShieldCheckIcon,
@@ -22,7 +23,7 @@ import {
  */
 
 export type Accion = 'ver' | 'justificar' | 'gestionar' | 'editar'
-export type Recurso = 'Asistencia' | 'Falta' | 'Empleado' | 'Permiso' | 'Checador' | 'Inventario'
+export type Recurso = 'Asistencia' | 'Falta' | 'Empleado' | 'DatosPersonales' | 'Permiso' | 'Checador' | 'Inventario'
 
 /** 'manage' y 'all' son palabras especiales de CASL: "cualquier acción" y "cualquier recurso" (rol Admin). */
 export type AppAbility = MongoAbility<[Accion | 'manage', Recurso | 'all']>
@@ -35,6 +36,7 @@ export const PERMISOS: { accion: Accion; recurso: Recurso; texto: string; icono:
   { accion: 'justificar', recurso: 'Falta', texto: 'Justificar faltas', icono: FileCheckIcon },
   { accion: 'gestionar', recurso: 'Empleado', texto: 'Dar de alta y de baja trabajadores', icono: UserCogIcon },
   { accion: 'editar', recurso: 'Empleado', texto: 'Editar el perfil de los trabajadores', icono: UserPenIcon },
+  { accion: 'gestionar', recurso: 'DatosPersonales', texto: 'Ver y editar datos personales de los trabajadores', icono: IdCardIcon },
   { accion: 'gestionar', recurso: 'Permiso', texto: 'Administrar permisos y cuentas', icono: ShieldCheckIcon },
   { accion: 'gestionar', recurso: 'Checador', texto: 'Revisar y autorizar el checador', icono: ScanFaceIcon },
   { accion: 'ver', recurso: 'Inventario', texto: 'Ver el inventario', icono: PackageIcon },
