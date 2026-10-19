@@ -1,4 +1,44 @@
-import type { DiaCalendario } from './types'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import type { DiaCalendario, PeriodoVacaciones } from './types'
+
+/** Solicitud de vacaciones que incluye un día futuro, si hay: vacaciones programadas. */
+export function vacacionProgramada(vacaciones: PeriodoVacaciones[], fecha: string, hoy: string) {
+  if (fecha <= hoy) return null
+  return vacaciones.find((p) => p.Fechas.includes(fecha)) ?? null
+}
+
+/** Días laborables (lunes a sábado) entre dos fechas `YYYY-MM-DD`, incluidas. */
+export function diasLaborablesEntre(desde: string, hasta: string): string[] {
+  const dias: string[] = []
+  if (!desde || !hasta || desde > hasta) return dias
+  for (let dia = fechaDesdeClave(desde); claveFecha(dia) <= hasta; dia.setDate(dia.getDate() + 1)) {
+    if (dia.getDay() !== 0) dias.push(claveFecha(dia))
+  }
+  return dias
+}
+
+const MAX_FECHAS_EN_TEXTO = 6
+
+/**
+ * Las fechas de una solicitud de vacaciones en palabras:
+ * - Seguidas (sin huecos, salvo domingos): "del 21 al 27 de oct".
+ * - Salteadas: "lun 21, jue 24 y lun 28 de oct"; si son muchas, "8 días salteados entre el 3 y el 28 de oct".
+ */
+export function describirFechas(fechas: string[]): string {
+  if (fechas.length === 0) return ''
+  const primera = fechaDesdeClave(fechas[0])
+  const ultima = fechaDesdeClave(fechas[fechas.length - 1])
+  const diaMes = (d: Date) => format(d, "d 'de' MMM", { locale: es })
+  if (fechas.length === 1) return format(primera, "EEEE d 'de' MMMM", { locale: es })
+
+  const seguidas = diasLaborablesEntre(fechas[0], fechas[fechas.length - 1]).length === fechas.length
+  if (seguidas) return `del ${format(primera, 'd', { locale: es })}${primera.getMonth() === ultima.getMonth() ? '' : ` de ${format(primera, 'MMM', { locale: es })}`} al ${diaMes(ultima)}`
+
+  if (fechas.length > MAX_FECHAS_EN_TEXTO) return `${fechas.length} días salteados entre el ${diaMes(primera)} y el ${diaMes(ultima)}`
+  const nombres = fechas.map((f) => format(fechaDesdeClave(f), "EEE d 'de' MMM", { locale: es }))
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+}
 
 export function formatHora(timestamp: string | null) {
   if (!timestamp) return '—'
@@ -28,16 +68,26 @@ export function fechaDeRegistro(r: { HoraEntrada: string | null; HoraSalida: str
   return r.Fecha ? fechaDesdeClave(r.Fecha) : null
 }
 
-/** Horas del día; si hay varios registros, toma la primera que exista de cada una. */
+/**
+ * Horas del día. Entrada y salida las calcula el backend (incluyen las marcas del checador y no cuentan el
+ * tiempo extra); la comida sale de los registros capturados.
+ */
 export function horasDelDia(dia: DiaCalendario | undefined) {
-  const primera = (campo: 'HoraEntrada' | 'InicioComida' | 'FinComida' | 'HoraSalida') =>
-    dia?.registros.find((r) => r[campo])?.[campo] ?? null
+  const primera = (campo: 'InicioComida' | 'FinComida') => dia?.registros.find((r) => r[campo])?.[campo] ?? null
   return {
-    entrada: primera('HoraEntrada'),
+    entrada: dia?.entrada ?? null,
     inicioComida: primera('InicioComida'),
     finComida: primera('FinComida'),
-    salida: primera('HoraSalida'),
+    salida: dia?.salida ?? null,
   }
+}
+
+/** "1 h 45 min", "2 h", "35 min", "0 min" */
+export function formatDuracion(minutos: number) {
+  const horas = Math.floor(minutos / 60)
+  const resto = minutos % 60
+  if (horas === 0) return `${resto} min`
+  return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`
 }
 
 export function formatFecha(timestamp: string | null) {

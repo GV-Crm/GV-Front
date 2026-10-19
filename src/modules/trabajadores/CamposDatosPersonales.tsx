@@ -98,6 +98,20 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
         </Campo>
       </Seccion>
 
+      <Seccion titulo="Nómina">
+        <Campo etiqueta="Salario diario (pesos)" ayuda="Con él se calcula la prima vacacional en pesos.">
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={valor.SalarioDiario}
+            onChange={(e) => cambiar('SalarioDiario', e.target.value)}
+          />
+        </Campo>
+      </Seccion>
+
       <Seccion titulo="Contactos de emergencia">
         {contactos.length === 0 && <p className="text-sm text-muted-foreground">Sin contactos de emergencia.</p>}
 

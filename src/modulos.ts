@@ -1,10 +1,20 @@
 import type { ComponentType } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAbility } from '@casl/react'
-import { CalendarCheck, Package, ScanFaceIcon, ShieldCheckIcon, UserCogIcon, UserRoundIcon, type LucideIcon } from 'lucide-react'
+import {
+  Building2Icon,
+  CalendarCheck,
+  Package,
+  ScanFaceIcon,
+  ShieldCheckIcon,
+  UserCogIcon,
+  UserRoundIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import type { Accion, AppAbility, Recurso } from '@/auth/permisos'
 import AsistenciasModulo from '@/modules/asistencias/AsistenciasModulo'
 import ChecadorPage from '@/modules/checador/ChecadorPage'
+import EmpresaPage from '@/modules/empresa/EmpresaPage'
 import InventarioPage from '@/modules/inventario/InventarioPage'
 import PerfilPage from '@/modules/perfil/PerfilPage'
 import PermisosPage from '@/modules/permisos/PermisosPage'
@@ -68,6 +78,16 @@ export const MODULOS: Modulo[] = [
     icono: ScanFaceIcon,
     pagina: ChecadorPage,
     permiso: { accion: 'gestionar', recurso: 'Checador' },
+  },
+  {
+    nombre: 'Empresa',
+    ruta: '/empresa',
+    icono: Building2Icon,
+    pagina: EmpresaPage,
+    permiso: [
+      { accion: 'ver', recurso: 'Empresa' },
+      { accion: 'editar', recurso: 'Empresa' },
+    ],
   },
   {
     nombre: 'Inventario',

@@ -1,7 +1,7 @@
 import { cn } from 'cn'
 import { ESTADOS } from './estados'
-import { claveFecha, formatHora, horasDelDia } from './formatHora'
-import type { DiaCalendario } from './types'
+import { claveFecha, formatHora, horasDelDia, vacacionProgramada } from './formatHora'
+import type { DiaCalendario, PeriodoVacaciones } from './types'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -28,9 +28,11 @@ type Props = {
   cargando: boolean
   /** Hacia dónde se cambió de mes: el calendario entra desde ese lado. null = recién abierto. */
   direccion?: 'derecha' | 'izquierda' | null
+  /** Periodos de vacaciones del mes: los días futuros que caen en uno se muestran como programados. */
+  vacaciones?: PeriodoVacaciones[]
 }
 
-function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargando, direccion = null }: Props) {
+function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargando, direccion = null, vacaciones = [] }: Props) {
   const celdas = celdasDelMes(mes)
 
   return (
@@ -41,7 +43,8 @@ function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargan
             key={nombre}
             className={cn(
               'text-center text-[11px] font-semibold tracking-wide uppercase sm:text-xs',
-              i >= 5 ? 'text-muted-foreground/70' : 'text-muted-foreground',
+              // Se trabaja de lunes a sábado: solo el domingo va más tenue.
+              i === 6 ? 'text-muted-foreground/70' : 'text-muted-foreground',
             )}
           >
             {nombre}
@@ -55,7 +58,8 @@ function CalendarioMensual({ mes, dias, hoy, seleccionado, onSeleccionar, cargan
           if (cargando) return <Skeleton key={fecha} className="h-11 rounded-lg sm:h-14 xl:h-[4.5rem]" />
 
           const dia = dias.get(fecha)
-          const estilo = dia ? ESTADOS[dia.estado] : null
+          const programada = !dia && vacacionProgramada(vacaciones, fecha, hoy)
+          const estilo = dia ? ESTADOS[dia.estado] : programada ? { ...ESTADOS.vacaciones, etiqueta: 'Vacaciones (programadas)' } : null
           const { entrada, salida } = horasDelDia(dia)
           const horario = entrada || salida ? `${formatHora(entrada)} – ${formatHora(salida)}` : null
           const justificacion = dia?.registros.find((r) => r.Justificacion)?.Justificacion

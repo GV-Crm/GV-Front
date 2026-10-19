@@ -18,7 +18,8 @@ import {
     nombreMes,
     tieneRegistros,
 } from './reportes'
-import type { EmpleadoDetalle } from './types'
+import { getCalendario } from './api'
+import { claveFecha } from './formatHora'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -45,17 +46,18 @@ function inicioDeMes(fecha: Date) {
 /**
  * Botón desplegable para descargar el reporte mensual de asistencias.
  * Dentro del menú se elige el mes (por defecto el actual) y luego el formato.
- * `obtenerDetalles` se llama al elegir un formato, así los datos se piden solo cuando hacen falta.
+ * El calendario del mes se pide al elegir un formato, así los datos se piden solo cuando hacen falta.
+ * Sin `uuid` incluye a todos los trabajadores activos.
  */
 function DescargarReporte({
     titulo,
     archivo,
-    obtenerDetalles,
+    uuid,
 }: {
     titulo: string
     /** Prefijo del nombre del archivo; se le agrega el mes. */
     archivo: string
-    obtenerDetalles: () => EmpleadoDetalle[] | Promise<EmpleadoDetalle[]>
+    uuid?: string
 }) {
     const mesActual = inicioDeMes(new Date())
     const [mes, setMes] = useState(mesActual)
@@ -69,7 +71,9 @@ function DescargarReporte({
         setGenerando(true)
         setAviso(null)
         try {
-            const reporte = armarReporte(await obtenerDetalles(), mes, titulo)
+            const finDeMes = new Date(mes.getFullYear(), mes.getMonth() + 1, 0)
+            const calendario = await getCalendario({ desde: claveFecha(mes), hasta: claveFecha(finDeMes), uuid })
+            const reporte = armarReporte(calendario.empleados, mes, titulo)
             if (!tieneRegistros(reporte)) {
                 setAviso(`No hay asistencias registradas en ${nombreMes(mes)}.`)
                 return

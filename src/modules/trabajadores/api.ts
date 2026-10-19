@@ -15,6 +15,8 @@ export type DatosPersonales = {
   NSS: string | null
   Domicilio: string | null
   ContactosEmergencia: ContactoEmergencia[]
+  /** En pesos. Con él se calcula la prima vacacional. */
+  SalarioDiario: number | null
 }
 
 export type DatosPersonalesGuardados = DatosPersonales & { ActualizadoEn: string | null; ActualizadoPor: string | null }

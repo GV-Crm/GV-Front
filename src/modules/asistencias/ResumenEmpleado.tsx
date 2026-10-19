@@ -1,17 +1,20 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
+  AlarmClockIcon,
   ChartPieIcon,
   CircleCheckIcon,
   CircleXIcon,
   FileCheckIcon,
   HistoryIcon,
+  TimerIcon,
   TrendingUpIcon,
   TriangleAlertIcon,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from 'cn'
 import { ESTADOS, ORDEN_ESTADOS } from './estados'
+import { formatDuracion } from './formatHora'
 import FaltasPorMes from './FaltasPorMes'
 import type { DiaCalendario, EmpleadoDetalle } from './types'
 import Ayuda from '@/components/Ayuda'
@@ -43,18 +46,36 @@ function TarjetaKpi({ titulo, valor, detalle, icono: Icono, color, posicion }: K
 
 function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
   const cuenta = (estado: DiaCalendario['estado']) => dias.filter((d) => d.estado === estado).length
-  const asistencias = cuenta('asistio')
+  const asistencias = cuenta('asistio') + cuenta('retardo')
   const incompletos = cuenta('sin_salida') + cuenta('sin_entrada')
   const faltas = cuenta('falta')
   const evaluados = asistencias + incompletos + faltas
   const porcentaje = evaluados ? Math.round(((asistencias + incompletos) / evaluados) * 100) : null
+  // Un retardo que llegó a falta (después de las 9:00) ya se cuenta como falta.
+  const retardos = dias.filter((d) => d.retardo && d.estado !== 'falta' && d.estado !== 'justificada').length
+  const minutosExtra = dias.reduce((total, d) => total + d.minutosExtra, 0)
+  const diasConExtra = dias.filter((d) => d.minutosExtra > 0).length
 
   return [
     {
       titulo: 'Asistencias',
       valor: String(asistencias),
-      detalle: 'Con entrada y salida',
+      detalle: 'Con entrada y salida (incluye retardos)',
       icono: CircleCheckIcon,
+      color: COLOR_SECCION.indicadores.suave,
+    },
+    {
+      titulo: 'Retardos',
+      valor: String(retardos),
+      detalle: 'Llegó después de las 8:15 (y antes de las 9:00)',
+      icono: AlarmClockIcon,
+      color: COLOR_SECCION.indicadores.suave,
+    },
+    {
+      titulo: 'Horas extra',
+      valor: formatDuracion(minutosExtra),
+      detalle: `${diasConExtra} ${diasConExtra === 1 ? 'día' : 'días'} con tiempo extra`,
+      icono: TimerIcon,
       color: COLOR_SECCION.indicadores.suave,
     },
     {
@@ -129,7 +150,7 @@ function ResumenEmpleado({ mes, dias, cargando, asistencias }: Props) {
 
   return (
     <div className="space-y-4">
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {kpis.map((kpi, i) =>
           cargando ? (
             <Skeleton key={kpi.titulo} className="h-20 rounded-xl" />

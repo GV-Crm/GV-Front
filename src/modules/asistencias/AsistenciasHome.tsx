@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { CalendarCheck, ChevronRightIcon, SearchIcon, SunIcon, UsersIcon } from 'lucide-react'
 import { cn } from 'cn'
-import { getCalendario, getDetalles, getEmpleados } from './api'
+import { getCalendario, getEmpleados } from './api'
 import type { Empleado, EstadoDia } from './types'
 import DescargarReporte from './DescargarReporte'
 import { EstadoBadge, EstatusBadge } from './componentes'
@@ -21,12 +21,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const RESUMEN_HOY: EstadoDia[] = ['asistio', 'sin_salida', 'sin_entrada', 'pendiente']
+// Después de las 9:00, quien no ha llegado ya cuenta como falta.
+const RESUMEN_HOY: EstadoDia[] = ['asistio', 'retardo', 'sin_salida', 'pendiente', 'falta', 'vacaciones']
 
-/** Cuatro tarjetas con cuántos empleados hay hoy en cada estado. */
+/** Tarjetas con cuántos empleados hay hoy en cada estado. */
 function TarjetasDeHoy({ estadoHoy }: { estadoHoy: Map<string, EstadoDia> }) {
     return (
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
             {RESUMEN_HOY.map((estado, i) => {
                 const estilo = ESTADOS[estado]
                 const total = [...estadoHoy.values()].filter((e) => e === estado).length
@@ -77,9 +78,6 @@ function AsistenciasHome() {
 
     useEffect(pedirEmpleados, [pedirEmpleados])
 
-    // El endpoint general no trae nombre ni motivo, así que el reporte se arma con el detalle de cada empleado.
-    const obtenerDetallesReporte = () => Promise.all(empleados.map((e) => getDetalles(e.Uuid)))
-
     const reintentar = () => {
         setLoading(true)
         setError(false)
@@ -106,11 +104,7 @@ function AsistenciasHome() {
                 icono={CalendarCheck}
                 titulo="Asistencias"
                 acciones={
-                    <DescargarReporte
-                        titulo="Reporte mensual de asistencias"
-                        archivo="asistencias"
-                        obtenerDetalles={obtenerDetallesReporte}
-                    />
+                    <DescargarReporte titulo="Reporte mensual de asistencias" archivo="asistencias" />
                 }
             />
 

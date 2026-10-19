@@ -1,10 +1,13 @@
 import { createMongoAbility, type MongoAbility } from '@casl/ability'
 import { useAbility } from '@casl/react'
 import {
+  Building2Icon,
+  BuildingIcon,
   CalendarCheckIcon,
   FileCheckIcon,
   IdCardIcon,
   PackageIcon,
+  PalmtreeIcon,
   ScanFaceIcon,
   ShieldCheckIcon,
   UserCogIcon,
@@ -23,7 +26,16 @@ import {
  */
 
 export type Accion = 'ver' | 'justificar' | 'gestionar' | 'editar'
-export type Recurso = 'Asistencia' | 'Falta' | 'Empleado' | 'DatosPersonales' | 'Permiso' | 'Checador' | 'Inventario'
+export type Recurso =
+  | 'Asistencia'
+  | 'Falta'
+  | 'Vacaciones'
+  | 'Empleado'
+  | 'DatosPersonales'
+  | 'Permiso'
+  | 'Checador'
+  | 'Empresa'
+  | 'Inventario'
 
 /** 'manage' y 'all' son palabras especiales de CASL: "cualquier acción" y "cualquier recurso" (rol Admin). */
 export type AppAbility = MongoAbility<[Accion | 'manage', Recurso | 'all']>
@@ -34,11 +46,14 @@ export type Regla = { action: Accion | 'manage'; subject: Recurso | 'all' }
 export const PERMISOS: { accion: Accion; recurso: Recurso; texto: string; icono: LucideIcon }[] = [
   { accion: 'ver', recurso: 'Asistencia', texto: 'Ver asistencias y reportes', icono: CalendarCheckIcon },
   { accion: 'justificar', recurso: 'Falta', texto: 'Justificar faltas', icono: FileCheckIcon },
+  { accion: 'gestionar', recurso: 'Vacaciones', texto: 'Registrar vacaciones de los trabajadores', icono: PalmtreeIcon },
   { accion: 'gestionar', recurso: 'Empleado', texto: 'Dar de alta y de baja trabajadores', icono: UserCogIcon },
   { accion: 'editar', recurso: 'Empleado', texto: 'Editar el perfil de los trabajadores', icono: UserPenIcon },
   { accion: 'gestionar', recurso: 'DatosPersonales', texto: 'Ver y editar datos personales de los trabajadores', icono: IdCardIcon },
   { accion: 'gestionar', recurso: 'Permiso', texto: 'Administrar permisos y cuentas', icono: ShieldCheckIcon },
   { accion: 'gestionar', recurso: 'Checador', texto: 'Revisar y autorizar el checador', icono: ScanFaceIcon },
+  { accion: 'ver', recurso: 'Empresa', texto: 'Ver los datos de la empresa', icono: Building2Icon },
+  { accion: 'editar', recurso: 'Empresa', texto: 'Editar los datos de la empresa', icono: BuildingIcon },
   { accion: 'ver', recurso: 'Inventario', texto: 'Ver el inventario', icono: PackageIcon },
 ]
 

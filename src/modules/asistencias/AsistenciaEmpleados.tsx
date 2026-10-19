@@ -12,6 +12,7 @@ import {
     ClipboardListIcon,
     MousePointerClickIcon,
     PaletteIcon,
+    PalmtreeIcon,
 } from 'lucide-react'
 import { cn } from 'cn'
 import { SiPuede } from '@/auth/SiPuede'
@@ -21,25 +22,27 @@ import { useMediaQuery } from '@/hooks/use-media-query'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { getCalendario, getDetalles } from './api'
-import type { DiaCalendario, EmpleadoDetalle } from './types'
+import type { DiaCalendario, EmpleadoDetalle, PeriodoVacaciones } from './types'
 import CalendarioMensual from './CalendarioMensual'
 import DetalleDia from './DetalleDia'
 import DescargarReporte from './DescargarReporte'
 import JustificarFalta from './JustificarFalta'
 import ResumenEmpleado from './ResumenEmpleado'
+import VacacionesEmpleado from './VacacionesEmpleado'
 import { EstatusBadge } from './componentes'
 import Avatar from '@/components/Avatar'
 import { ESTADOS, ESTADOS_JUSTIFICABLES, ORDEN_ESTADOS } from './estados'
-import { claveFecha, fechaDesdeClave } from './formatHora'
+import { claveFecha, fechaDesdeClave, vacacionProgramada } from './formatHora'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type Vista = 'calendario' | 'resumen'
+type Vista = 'calendario' | 'resumen' | 'vacaciones'
 
 const VISTAS = [
     { id: 'calendario', nombre: 'Calendario', icono: CalendarDaysIcon },
     { id: 'resumen', nombre: 'Resumen', icono: ChartPieIcon },
+    { id: 'vacaciones', nombre: 'Vacaciones', icono: PalmtreeIcon },
 ] as const
 
 function inicioDeMes(fecha: Date) {
@@ -90,7 +93,12 @@ function Leyenda({ dias, className }: { dias: DiaCalendario[]; className?: strin
     )
 }
 
-type MesCargado = { mes: string; hoy: string; dias: Map<string, DiaCalendario> } | { mes: string; error: true }
+type MesCargado =
+    | { mes: string; hoy: string; dias: Map<string, DiaCalendario>; vacaciones: PeriodoVacaciones[] }
+    | { mes: string; error: true }
+
+/** Hasta cuántos meses adelante se puede ver el calendario (para las vacaciones programadas). */
+const MESES_A_FUTURO = 12
 
 function AsistenciaDetalle() {
     const { uuid } = useParams()
@@ -127,7 +135,7 @@ function AsistenciaDetalle() {
             .then((c) => {
                 if (!vigente) return
                 const dias = new Map((c.empleados[0]?.dias ?? []).map((d) => [d.fecha, d]))
-                setMesCargado({ mes: claveMes, hoy: c.hoy, dias })
+                setMesCargado({ mes: claveMes, hoy: c.hoy, dias, vacaciones: c.empleados[0]?.vacaciones ?? [] })
             })
             .catch((err) => {
                 console.error('Error al obtener el calendario:', err)
@@ -147,7 +155,10 @@ function AsistenciaDetalle() {
     const mesActual = inicioDeMes(new Date())
     const mesIngreso = empleado?.Ingreso ? inicioDeMes(fechaDesdeClave(empleado.Ingreso)) : null
     const puedeRetroceder = !mesIngreso || mes > mesIngreso
-    const puedeAvanzar = mes < mesActual
+    // Los meses futuros solo muestran las vacaciones programadas.
+    const puedeAvanzar = mes < sumarMeses(mesActual, MESES_A_FUTURO)
+    const vacacionesDelMes = datosMes?.vacaciones ?? []
+    const hoyClave = datosMes?.hoy ?? claveFecha(new Date())
 
     const irAMes = (nuevo: Date) => {
         // El calendario entra desde el lado hacia el que se navega.
@@ -190,6 +201,7 @@ function AsistenciaDetalle() {
             key={seleccionado ?? 'ninguno'}
             fecha={seleccionado}
             dia={diaSeleccionado}
+            programada={seleccionado && !diaSeleccionado ? vacacionProgramada(vacacionesDelMes, seleccionado, hoyClave) : null}
             accion={
                 diaSeleccionado && ESTADOS_JUSTIFICABLES.includes(diaSeleccionado.estado) ? (
                     <SiPuede accion="justificar" recurso="Falta">
@@ -234,7 +246,7 @@ function AsistenciaDetalle() {
                     <DescargarReporte
                         titulo={`Reporte mensual de asistencias · ${empleado.Nombre}`}
                         archivo={`asistencias-${empleado.Nombre}`}
-                        obtenerDetalles={() => [empleado]}
+                        uuid={empleado.Uuid}
                     />
                 </div>
             </section>
@@ -249,7 +261,13 @@ function AsistenciaDetalle() {
                     className="w-full sm:w-fit"
                 />
 
-                <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                {/* Las vacaciones no dependen del mes: ahí no se muestra el selector. */}
+                <div
+                    className={cn(
+                        'flex items-center gap-1 rounded-lg border bg-card p-0.5 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none',
+                        vista === 'vacaciones' && 'hidden',
+                    )}
+                >
                     <Button
                         variant="ghost"
                         size="icon"
@@ -293,7 +311,9 @@ function AsistenciaDetalle() {
                 </div>
             </div>
 
-            {mesCargado && 'error' in mesCargado && !cargandoMes ? (
+            {vista === 'vacaciones' ? (
+                <VacacionesEmpleado key={version} uuid={uuid} onCambio={() => setVersion((v) => v + 1)} />
+            ) : mesCargado && 'error' in mesCargado && !cargandoMes ? (
                 <div className="rounded-xl border border-dashed px-6 py-16 text-center text-sm text-muted-foreground">
                     No se pudo cargar este mes. Revisa tu conexión e inténtalo de nuevo.
                 </div>
@@ -312,7 +332,8 @@ function AsistenciaDetalle() {
                                 direccion={direccion}
                                 mes={mes}
                                 dias={dias}
-                                hoy={datosMes?.hoy ?? claveFecha(new Date())}
+                                hoy={hoyClave}
+                                vacaciones={vacacionesDelMes}
                                 seleccionado={seleccionado}
                                 onSeleccionar={seleccionar}
                                 cargando={cargandoMes}

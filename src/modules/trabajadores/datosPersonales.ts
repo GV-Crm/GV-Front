@@ -18,6 +18,7 @@ export const FORM_VACIO: FormDatosPersonales = {
   NSS: '',
   Domicilio: '',
   ContactosEmergencia: [],
+  SalarioDiario: '',
 }
 
 export function aFormulario(datos: DatosPersonales): FormDatosPersonales {
@@ -30,6 +31,7 @@ export function aFormulario(datos: DatosPersonales): FormDatosPersonales {
     NSS: datos.NSS ?? '',
     Domicilio: datos.Domicilio ?? '',
     ContactosEmergencia: datos.ContactosEmergencia,
+    SalarioDiario: datos.SalarioDiario === null ? '' : String(datos.SalarioDiario),
   }
 }
 
@@ -46,6 +48,7 @@ export function aDatos(form: FormDatosPersonales): DatosPersonales {
     NSS: vacioANull(form.NSS),
     Domicilio: vacioANull(form.Domicilio),
     ContactosEmergencia: form.ContactosEmergencia.filter((c) => c.Nombre.trim() || c.Parentesco.trim() || c.Telefono.trim()),
+    SalarioDiario: form.SalarioDiario.trim() ? Number(form.SalarioDiario.replace(/[$,\s]/g, '')) : null,
   }
 }
 

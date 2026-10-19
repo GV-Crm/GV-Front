@@ -1,19 +1,21 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { fechaDeRegistro, formatHora } from './formatHora'
-import type { EmpleadoDetalle } from './types'
+import { ESTADOS } from './estados'
+import { fechaDesdeClave, formatDuracion, formatHora, horasDelDia } from './formatHora'
+import type { DiaCalendario, EmpleadoCalendario } from './types'
 
-/** Un día registrado de un empleado. */
+/** Un día de un empleado. */
 type FilaDia = {
     fecha: string
     entrada: string
     inicioComida: string
     finComida: string
     salida: string
+    horasExtra: string
     motivo: string
 }
 
-type Resumen = { dias: number; asistencias: number; retardos: number; faltas: number }
+type Resumen = { dias: number; asistencias: number; retardos: number; faltas: number; horasExtra: string }
 
 type EmpleadoReporte = { nombre: string; area: string; dias: FilaDia[]; resumen: Resumen }
 
@@ -25,17 +27,28 @@ const COLUMNAS_DIA: { titulo: string; campo: keyof FilaDia; ancho: number }[] = 
     { titulo: 'Inicio comida', campo: 'inicioComida', ancho: 14 },
     { titulo: 'Fin comida', campo: 'finComida', ancho: 12 },
     { titulo: 'Salida', campo: 'salida', ancho: 10 },
-    { titulo: 'Motivo', campo: 'motivo', ancho: 40 },
+    { titulo: 'Horas extra', campo: 'horasExtra', ancho: 12 },
+    { titulo: 'Estado', campo: 'motivo', ancho: 40 },
 ]
 
 const COLUMNAS_RESUMEN: { titulo: string; valor: (e: EmpleadoReporte) => string | number; ancho: number }[] = [
     { titulo: 'Empleado', valor: (e) => e.nombre, ancho: 28 },
     { titulo: 'Área', valor: (e) => e.area, ancho: 18 },
-    { titulo: 'Días registrados', valor: (e) => e.resumen.dias, ancho: 16 },
+    { titulo: 'Días', valor: (e) => e.resumen.dias, ancho: 8 },
     { titulo: 'Asistencias', valor: (e) => e.resumen.asistencias, ancho: 12 },
     { titulo: 'Retardos', valor: (e) => e.resumen.retardos, ancho: 12 },
     { titulo: 'Faltas', valor: (e) => e.resumen.faltas, ancho: 12 },
+    { titulo: 'Horas extra', valor: (e) => e.resumen.horasExtra, ancho: 14 },
 ]
+
+/** "Retardo · llegó 25 min tarde", "Falta justificada: Incapacidad"... */
+function textoDelEstado(d: DiaCalendario) {
+    const etiqueta = ESTADOS[d.estado].etiqueta
+    const justificacion = d.registros.find((r) => r.Justificacion)?.Justificacion
+    if (justificacion) return `${etiqueta}: ${justificacion}`
+    if (d.retardo && d.entrada) return `${etiqueta} · llegó ${formatDuracion(d.minutosTarde)} tarde`
+    return etiqueta
+}
 
 /** "septiembre 2026" */
 export function nombreMes(mes: Date) {
@@ -53,43 +66,37 @@ export function nombreDeArchivo(...partes: string[]) {
 }
 
 /**
- * Arma el reporte del mes: un bloque por empleado (orden alfabético) con sus días en orden
- * y un resumen. Los empleados sin registros en el mes también aparecen, con todo en 0.
- * Retardos y faltas incluyen los justificados, igual que en el calendario.
+ * Arma el reporte del mes con el calendario (mismas reglas que en pantalla: retardos, faltas y horas extra).
+ * Un bloque por empleado (orden alfabético) con sus días en orden, sin los descansos, y un resumen.
  */
-export function armarReporte(detalles: EmpleadoDetalle[], mes: Date, titulo: string): ReporteMes {
-    const empleados = detalles.map((detalle) => {
-        const delMes = detalle.Asistencias.flatMap((a) => {
-            const fecha = fechaDeRegistro(a)
-            return fecha && fecha.getFullYear() === mes.getFullYear() && fecha.getMonth() === mes.getMonth()
-                ? [{ ...a, fecha }]
-                : []
-        }).sort((a, b) => a.fecha.getTime() - b.fecha.getTime())
-
-        const resumen: Resumen = { dias: delMes.length, asistencias: 0, retardos: 0, faltas: 0 }
-        for (const a of delMes) {
-            const motivo = a.Estado?.Motivo.trim() ?? ''
-            if (motivo === 'Asistencia') resumen.asistencias++
-            else if (motivo.startsWith('Retardo')) resumen.retardos++
-            else if (motivo.startsWith('Falta')) resumen.faltas++
+export function armarReporte(calendario: EmpleadoCalendario[], mes: Date, titulo: string): ReporteMes {
+    const empleados = calendario.map((e) => {
+        const dias = e.dias.filter((d) => d.estado !== 'descanso' || d.checadas.length > 0)
+        const resumen: Resumen = {
+            dias: dias.length,
+            asistencias: e.totales.asistencias,
+            retardos: e.totales.retardos,
+            faltas: e.totales.faltas,
+            horasExtra: formatDuracion(e.totales.minutosExtra),
         }
 
         return {
-            nombre: detalle.Nombre,
-            area: detalle.Area,
+            nombre: e.Nombre,
+            area: e.Area?.trim() ?? '',
             resumen,
-            dias: delMes.map((a) => ({
-                // "lun 01/09" para ubicar rápido el día de la semana.
-                fecha: format(a.fecha, 'EEE dd/MM', { locale: es }),
-                entrada: formatHora(a.HoraEntrada),
-                inicioComida: formatHora(a.InicioComida),
-                finComida: formatHora(a.FinComida),
-                salida: formatHora(a.HoraSalida),
-                // En faltas justificadas se agrega el motivo escrito, p. ej. "Falta Justificada: Incapacidad".
-                motivo: a.Justificacion
-                    ? `${a.Estado?.Motivo ?? 'Falta Justificada'}: ${a.Justificacion}`
-                    : (a.Estado?.Motivo ?? 'Sin estado'),
-            })),
+            dias: dias.map((d) => {
+                const horas = horasDelDia(d)
+                return {
+                    // "lun 01/09" para ubicar rápido el día de la semana.
+                    fecha: format(fechaDesdeClave(d.fecha), 'EEE dd/MM', { locale: es }),
+                    entrada: formatHora(horas.entrada),
+                    inicioComida: formatHora(horas.inicioComida),
+                    finComida: formatHora(horas.finComida),
+                    salida: formatHora(horas.salida),
+                    horasExtra: d.minutosExtra > 0 ? formatDuracion(d.minutosExtra) : '—',
+                    motivo: textoDelEstado(d),
+                }
+            }),
         }
     })
 
@@ -206,10 +213,11 @@ export async function descargarPDF(reporte: ReporteMes, nombreArchivo: string) {
         const r = e.resumen
         doc.text(
             [
-                contar(r.dias, 'día registrado', 'días registrados'),
+                contar(r.dias, 'día', 'días'),
                 contar(r.asistencias, 'asistencia', 'asistencias'),
                 contar(r.retardos, 'retardo', 'retardos'),
                 contar(r.faltas, 'falta', 'faltas'),
+                `${r.horasExtra} extra`,
             ].join(' · '),
             margen,
             y + 5,

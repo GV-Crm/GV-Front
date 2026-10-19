@@ -1,4 +1,5 @@
 import {
+  AlarmClockIcon,
   CircleCheckIcon,
   CircleXIcon,
   ClockIcon,
@@ -6,6 +7,7 @@ import {
   LogInIcon,
   LogOutIcon,
   MoonIcon,
+  PalmtreeIcon,
   type LucideIcon,
 } from 'lucide-react'
 import type { EstadoDia } from './types'
@@ -32,6 +34,15 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
     punto: 'bg-emerald-600',
     texto: 'text-emerald-700 dark:text-emerald-300',
   },
+  retardo: {
+    etiqueta: 'Retardo',
+    descripcion: 'Registró entrada y salida, pero llegó después de las 8:15.',
+    icono: AlarmClockIcon,
+    celda: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/30',
+    badge: 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-200',
+    punto: 'bg-yellow-500',
+    texto: 'text-yellow-800 dark:text-yellow-300',
+  },
   sin_salida: {
     etiqueta: 'Falta registrar salida',
     descripcion: 'Registró su entrada, pero no su salida.',
@@ -52,7 +63,7 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
   },
   falta: {
     etiqueta: 'Falta',
-    descripcion: 'Día laboral sin ningún registro.',
+    descripcion: 'Día laboral sin ningún registro, o llegó después de las 9:00.',
     icono: CircleXIcon,
     celda: 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/30',
     badge: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300',
@@ -68,9 +79,18 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
     punto: 'bg-blue-800',
     texto: 'text-blue-800 dark:text-blue-300',
   },
+  vacaciones: {
+    etiqueta: 'Vacaciones',
+    descripcion: 'Día laboral dentro de un periodo de vacaciones que pidió: no cuenta como falta.',
+    icono: PalmtreeIcon,
+    celda: 'bg-teal-50 border-teal-200 dark:bg-teal-500/10 dark:border-teal-500/30',
+    badge: 'bg-teal-100 text-teal-900 dark:bg-teal-500/20 dark:text-teal-200',
+    punto: 'bg-teal-600',
+    texto: 'text-teal-800 dark:text-teal-300',
+  },
   pendiente: {
     etiqueta: 'Pendiente',
-    descripcion: 'Es hoy y todavía no registra nada.',
+    descripcion: 'Es hoy, todavía no registra nada y aún no dan las 9:00.',
     icono: ClockIcon,
     celda: 'border-dashed bg-card border-slate-300 dark:border-slate-500/40',
     badge: 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-200',
@@ -79,7 +99,7 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
   },
   descanso: {
     etiqueta: 'Descanso',
-    descripcion: 'Sábado o domingo sin registros.',
+    descripcion: 'Domingo sin registros. Se trabaja de lunes a sábado.',
     icono: MoonIcon,
     celda: 'bg-slate-50 border-slate-200 dark:bg-slate-500/10 dark:border-slate-500/20',
     badge: 'bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300',
@@ -90,13 +110,15 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
 
 export const ORDEN_ESTADOS: EstadoDia[] = [
   'asistio',
+  'retardo',
   'sin_salida',
   'sin_entrada',
   'falta',
   'justificada',
+  'vacaciones',
   'pendiente',
   'descanso',
 ]
 
-/** Días sin entrada ni salida: los únicos que se pueden marcar (o desmarcar) como falta justificada. */
+/** Los días que cuentan como falta (sin registros, o con entrada después de las 9:00) se pueden justificar. */
 export const ESTADOS_JUSTIFICABLES: EstadoDia[] = ['falta', 'justificada', 'pendiente']
