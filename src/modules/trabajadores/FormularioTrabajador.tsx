@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { CircleCheckIcon, IdCardIcon, Loader2Icon, UserPlusIcon } from 'lucide-react'
-import { crearTrabajador } from './api'
+import { crearTrabajador, type Area } from './api'
 import CamposDatosPersonales from './CamposDatosPersonales'
 import { aDatos, FORM_VACIO, tieneDatos, type FormDatosPersonales } from './datosPersonales'
 import PinChecador from './PinChecador'
+import SelectorArea from './SelectorArea'
 import { usePuede } from '@/auth/permisos'
 import type { Empleado } from '@/modules/asistencias/types'
 import { claveFecha } from '@/modules/asistencias/formatHora'
@@ -20,14 +21,19 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 
-type Props = { areas: string[]; onCreado: (empleado: Empleado) => void }
+type Props = {
+  areas: Area[]
+  onCreado: (empleado: Empleado) => void
+  /** Se llama si desde el formulario se agrega un área nueva al catálogo. */
+  onAreaCreada: (area: Area) => void
+}
 
 /**
  * Botón "Nuevo trabajador" que abre un panel lateral con el formulario de alta.
  * Con el permiso "gestionar DatosPersonales" se pueden capturar también sus datos personales.
  * Al terminar se muestra el ID que el sistema le asignó para registrarlo en el checador.
  */
-function FormularioTrabajador({ areas, onCreado }: Props) {
+function FormularioTrabajador({ areas, onCreado, onAreaCreada }: Props) {
   const puedeDatosPersonales = usePuede('gestionar', 'DatosPersonales')
   const [abierto, setAbierto] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -113,15 +119,10 @@ function FormularioTrabajador({ areas, onCreado }: Props) {
                 <Input required maxLength={120} autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
+              <div className="flex flex-col gap-1.5 text-sm font-medium">
                 Área
-                <Input required maxLength={60} list="areas-existentes" value={area} onChange={(e) => setArea(e.target.value)} />
-                <datalist id="areas-existentes">
-                  {areas.map((a) => (
-                    <option key={a} value={a} />
-                  ))}
-                </datalist>
-              </label>
+                <SelectorArea areas={areas} valor={area} onCambio={setArea} onAreaCreada={onAreaCreada} disabled={enviando} />
+              </div>
 
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 Fecha de ingreso

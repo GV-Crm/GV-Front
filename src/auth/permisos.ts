@@ -4,8 +4,10 @@ import {
   Building2Icon,
   BuildingIcon,
   CalendarCheckIcon,
+  DoorOpenIcon,
   FileCheckIcon,
   IdCardIcon,
+  KeyRoundIcon,
   PackageIcon,
   PalmtreeIcon,
   ScanFaceIcon,
@@ -25,14 +27,16 @@ import {
  * Si agregas un permiso, agrégalo también en el backend (gv-one: src/lib/permisos/catalogo.ts).
  */
 
-export type Accion = 'ver' | 'justificar' | 'gestionar' | 'editar'
+export type Accion = 'ver' | 'justificar' | 'autorizar' | 'gestionar' | 'editar' | 'cambiar'
 export type Recurso =
   | 'Asistencia'
   | 'Falta'
+  | 'Salida'
   | 'Vacaciones'
   | 'Empleado'
   | 'DatosPersonales'
   | 'Permiso'
+  | 'Contrasena'
   | 'Checador'
   | 'Empresa'
   | 'Inventario'
@@ -46,11 +50,13 @@ export type Regla = { action: Accion | 'manage'; subject: Recurso | 'all' }
 export const PERMISOS: { accion: Accion; recurso: Recurso; texto: string; icono: LucideIcon }[] = [
   { accion: 'ver', recurso: 'Asistencia', texto: 'Ver asistencias y reportes', icono: CalendarCheckIcon },
   { accion: 'justificar', recurso: 'Falta', texto: 'Justificar faltas', icono: FileCheckIcon },
+  { accion: 'autorizar', recurso: 'Salida', texto: 'Dar permiso para salir antes', icono: DoorOpenIcon },
   { accion: 'gestionar', recurso: 'Vacaciones', texto: 'Registrar vacaciones de los trabajadores', icono: PalmtreeIcon },
   { accion: 'gestionar', recurso: 'Empleado', texto: 'Dar de alta y de baja trabajadores', icono: UserCogIcon },
   { accion: 'editar', recurso: 'Empleado', texto: 'Editar el perfil de los trabajadores', icono: UserPenIcon },
   { accion: 'gestionar', recurso: 'DatosPersonales', texto: 'Ver y editar datos personales de los trabajadores', icono: IdCardIcon },
   { accion: 'gestionar', recurso: 'Permiso', texto: 'Administrar permisos y cuentas', icono: ShieldCheckIcon },
+  { accion: 'cambiar', recurso: 'Contrasena', texto: 'Cambiar la contraseña de las cuentas', icono: KeyRoundIcon },
   { accion: 'gestionar', recurso: 'Checador', texto: 'Revisar y autorizar el checador', icono: ScanFaceIcon },
   { accion: 'ver', recurso: 'Empresa', texto: 'Ver los datos de la empresa', icono: Building2Icon },
   { accion: 'editar', recurso: 'Empresa', texto: 'Editar los datos de la empresa', icono: BuildingIcon },

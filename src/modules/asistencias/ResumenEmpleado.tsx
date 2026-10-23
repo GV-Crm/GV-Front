@@ -46,7 +46,7 @@ function TarjetaKpi({ titulo, valor, detalle, icono: Icono, color, posicion }: K
 
 function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
   const cuenta = (estado: DiaCalendario['estado']) => dias.filter((d) => d.estado === estado).length
-  const asistencias = cuenta('asistio') + cuenta('retardo')
+  const asistencias = cuenta('asistio') + cuenta('retardo') + cuenta('permiso')
   const incompletos = cuenta('sin_salida') + cuenta('sin_entrada')
   const faltas = cuenta('falta')
   const evaluados = asistencias + incompletos + faltas

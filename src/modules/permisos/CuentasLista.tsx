@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { CheckIcon, KeyRoundIcon, Loader2Icon, LockIcon } from 'lucide-react'
+import { CheckIcon, CircleCheckIcon, KeyRoundIcon, Loader2Icon, LockIcon, XIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { cambiarRolDeCuenta, getCuentas, type Cuenta } from './api'
 import { CLASES_SELECT } from './estilos'
+import CambiarContrasena from './CambiarContrasena'
 import NuevaCuenta from './NuevaCuenta'
+import { usePuede } from '@/auth/permisos'
 import Avatar from '@/components/Avatar'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
@@ -55,6 +57,10 @@ function CuentasLista() {
   const [cuentas, setCuentas] = useState<Cuenta[] | null>(null)
   const [roles, setRoles] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  // Aviso tras crear una cuenta o cambiar una contraseña.
+  const [aviso, setAviso] = useState<string | null>(null)
+  const gestionaPermisos = usePuede('gestionar', 'Permiso')
+  const cambiaContrasenas = usePuede('cambiar', 'Contrasena')
 
   useEffect(() => {
     getCuentas()
@@ -78,8 +84,32 @@ function CuentasLista() {
           <KeyRoundIcon className={cn('size-4', COLOR_SECCION.personas.texto)} />
           {cuentas.length} cuentas con acceso
         </p>
-        <NuevaCuenta roles={roles} onCreada={(nueva) => setCuentas((lista) => [...lista!, nueva])} />
+        {gestionaPermisos && (
+          <NuevaCuenta
+            roles={roles}
+            onCreada={(nueva, usaContrasenaExistente) => {
+              setCuentas((lista) => [...lista!, nueva])
+              // Si se creó con un área nueva, ya se puede elegir en las demás cuentas.
+              setRoles((lista) => (lista.includes(nueva.Rol) ? lista : [...lista, nueva.Rol]))
+              setAviso(
+                usaContrasenaExistente
+                  ? `${nueva.Correo} ya tenía usuario para iniciar sesión: sigue entrando con su contraseña de antes.`
+                  : `Listo: ${nueva.Correo} ya puede entrar con la contraseña inicial.`,
+              )
+            }}
+          />
+        )}
       </div>
+
+      {aviso && (
+        <p role="status" className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          <CircleCheckIcon className="mt-0.5 size-4 shrink-0" />
+          <span className="flex-1">{aviso}</span>
+          <button type="button" aria-label="Cerrar aviso" onClick={() => setAviso(null)} className="opacity-70 hover:opacity-100">
+            <XIcon className="size-4" />
+          </button>
+        </p>
+      )}
 
       <ul className="divide-y overflow-hidden rounded-xl border bg-card">
         {cuentas.map((cuenta, i) => (
@@ -108,6 +138,8 @@ function CuentasLista() {
             ) : (
               <SelectorRol cuenta={cuenta} roles={roles} onCambio={reemplazar} />
             )}
+
+            {cambiaContrasenas && !cuenta.contrasenaBloqueada && <CambiarContrasena cuenta={cuenta} onCambiada={setAviso} />}
           </li>
         ))}
       </ul>

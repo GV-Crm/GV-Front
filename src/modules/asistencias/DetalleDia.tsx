@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import {
   AlarmClockIcon,
   CoffeeIcon,
+  DoorOpenIcon,
   LogInIcon,
   LogOutIcon,
   MousePointerClickIcon,
@@ -95,7 +96,14 @@ function DetalleDia({ fecha, dia, accion, programada }: Props) {
 
   const titulo = format(fechaDesdeClave(fecha), "EEEE d 'de' MMMM yyyy", { locale: es })
   const horas = horasDelDia(dia)
-  const asistio = dia?.estado === 'asistio' || dia?.estado === 'retardo' || dia?.estado === 'sin_salida' || dia?.estado === 'sin_entrada'
+  const asistio =
+    dia?.estado === 'asistio' ||
+    dia?.estado === 'retardo' ||
+    dia?.estado === 'permiso' ||
+    dia?.estado === 'sin_salida' ||
+    dia?.estado === 'sin_entrada'
+  // El activo ya se ve con su cuenta regresiva en la acción del día.
+  const permiso = dia?.permisoSalida?.situacion === 'activo' ? null : (dia?.permisoSalida ?? null)
   const periodoVacaciones = dia?.vacaciones ?? programada ?? null
   // De vacaciones no se muestra el motivo de una falta guardada antes de registrarlas.
   const motivos =
@@ -150,6 +158,24 @@ function DetalleDia({ fecha, dia, accion, programada }: Props) {
               {dia.minutosTarde > 60 ? 'Después de las 9:00 cuenta como falta.' : 'Después de las 8:15 es retardo.'}
             </span>
           </p>
+        </div>
+      )}
+
+      {permiso && (
+        <div className={cn('space-y-1 rounded-lg border px-3 py-2 text-sm', ESTADOS.permiso.celda)}>
+          <p className={cn('flex items-center gap-2 text-xs font-semibold', ESTADOS.permiso.texto)}>
+            <DoorOpenIcon className="size-4" />
+            {permiso.situacion === 'usado' ? 'Salió con permiso' : 'Permiso de salida sin usar'}
+          </p>
+          <p className="tabular-nums">
+            {permiso.situacion === 'usado' && dia?.salida ? (
+              <>Checó su salida a las <span className="font-semibold">{formatHora(dia.salida)}</span>.</>
+            ) : (
+              <>Se le dio a las {formatHora(permiso.autorizadoEn)}, pero no checó en los 10 minutos.</>
+            )}
+          </p>
+          {permiso.motivo && <p className="break-words">{permiso.motivo}</p>}
+          {permiso.autorizadoPor && <p className="text-xs text-muted-foreground">Autorizó: {permiso.autorizadoPor}</p>}
         </div>
       )}
 

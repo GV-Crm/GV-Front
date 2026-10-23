@@ -3,6 +3,7 @@ import {
   CircleCheckIcon,
   CircleXIcon,
   ClockIcon,
+  DoorOpenIcon,
   FileCheckIcon,
   LogInIcon,
   LogOutIcon,
@@ -10,7 +11,7 @@ import {
   PalmtreeIcon,
   type LucideIcon,
 } from 'lucide-react'
-import type { EstadoDia } from './types'
+import type { DiaCalendario, EstadoDia } from './types'
 
 type Estilo = {
   etiqueta: string
@@ -42,6 +43,15 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
     badge: 'bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-200',
     punto: 'bg-yellow-500',
     texto: 'text-yellow-800 dark:text-yellow-300',
+  },
+  permiso: {
+    etiqueta: 'Salió con permiso',
+    descripcion: 'Salió antes de su hora con permiso: checó dentro de los 10 minutos que se le dieron.',
+    icono: DoorOpenIcon,
+    celda: 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30',
+    badge: 'bg-indigo-100 text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-200',
+    punto: 'bg-indigo-600',
+    texto: 'text-indigo-700 dark:text-indigo-300',
   },
   sin_salida: {
     etiqueta: 'Falta registrar salida',
@@ -111,6 +121,7 @@ export const ESTADOS: Record<EstadoDia, Estilo> = {
 export const ORDEN_ESTADOS: EstadoDia[] = [
   'asistio',
   'retardo',
+  'permiso',
   'sin_salida',
   'sin_entrada',
   'falta',
@@ -122,3 +133,8 @@ export const ORDEN_ESTADOS: EstadoDia[] = [
 
 /** Los días que cuentan como falta (sin registros, o con entrada después de las 9:00) se pueden justificar. */
 export const ESTADOS_JUSTIFICABLES: EstadoDia[] = ['falta', 'justificada', 'pendiente']
+
+/** Hoy, ya llegó y todavía no sale: el único caso en el que se le puede dar permiso de salida. */
+export function puedePedirPermiso(dia: DiaCalendario) {
+  return dia.estado === 'sin_salida' && Boolean(dia.entrada) && dia.permisoSalida?.situacion !== 'usado'
+}

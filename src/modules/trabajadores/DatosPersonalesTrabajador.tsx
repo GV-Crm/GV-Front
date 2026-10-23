@@ -6,23 +6,29 @@ import { getDatosPersonales, guardarDatosPersonales, type DatosPersonalesGuardad
 import CamposDatosPersonales from './CamposDatosPersonales'
 import { aDatos, aFormulario, FORM_VACIO, type FormDatosPersonales } from './datosPersonales'
 import PinChecador from './PinChecador'
+import { cn } from 'cn'
+import { EstatusBadge } from '@/modules/asistencias/componentes'
 import type { Empleado } from '@/modules/asistencias/types'
+import Avatar from '@/components/Avatar'
+import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 /**
  * Botón que abre el apartado de información personal de un trabajador (CURP, RFC, NSS, contacto,
  * domicilio y contactos de emergencia). Solo se muestra con el permiso "gestionar DatosPersonales".
- * Los datos se piden al abrir el panel, para no traer datos sensibles en la lista.
+ * Se abre en una ventana centrada; los datos se piden al abrirla, para no traer datos sensibles en la lista.
  */
 function DatosPersonalesTrabajador({ empleado }: { empleado: Empleado }) {
   const [abierto, setAbierto] = useState(false)
@@ -65,38 +71,46 @@ function DatosPersonalesTrabajador({ empleado }: { empleado: Empleado }) {
   }
 
   return (
-    <Sheet open={abierto} onOpenChange={cambiarAbierto}>
-      <SheetTrigger
+    <Dialog open={abierto} onOpenChange={cambiarAbierto}>
+      <DialogTrigger
         render={<Button variant="outline" size="icon" aria-label={`Información personal de ${empleado.Nombre}`} title="Información personal" />}
       >
         <IdCardIcon />
-      </SheetTrigger>
+      </DialogTrigger>
 
-      <SheetContent className="w-full sm:max-w-md">
-        <form onSubmit={guardar} className="flex h-full flex-col">
-          <SheetHeader>
-            <SheetTitle>Información personal</SheetTitle>
-            <SheetDescription>{empleado.Nombre}</SheetDescription>
-          </SheetHeader>
+      <DialogContent className="sm:max-w-3xl">
+        <form onSubmit={guardar} className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader>
+            <DialogTitle>Información personal</DialogTitle>
+            <DialogDescription>CURP, RFC, NSS, contacto, domicilio y contactos de emergencia.</DialogDescription>
+          </DialogHeader>
 
-          <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pb-4">
-            <PinChecador pin={empleado.PinChecador} />
+          <DialogBody className="flex flex-col gap-4">
+            {/* Ficha del trabajador: foto grande para reconocerlo de un vistazo, y su ID del checador. */}
+            <div className="flex flex-col gap-4 rounded-xl border bg-muted/30 p-4 md:flex-row md:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <Avatar
+                  nombre={empleado.Nombre}
+                  foto={empleado.Foto}
+                  className={cn('size-20 text-2xl', COLOR_SECCION.personas.suave, !empleado.Activo && 'grayscale')}
+                />
+                <div className="min-w-0 space-y-1">
+                  <p className="text-lg leading-tight font-semibold">{empleado.Nombre}</p>
+                  <p className="truncate text-sm text-muted-foreground">{empleado.Area?.trim() || 'Sin área'}</p>
+                  <EstatusBadge activo={empleado.Activo} />
+                </div>
+              </div>
+              <PinChecador pin={empleado.PinChecador} className="bg-card md:w-80" />
+            </div>
 
             {cargando ? (
-              <div className="flex flex-col gap-3">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
             ) : (
-              <CamposDatosPersonales valor={form} onCambio={setForm} disabled={guardando} />
-            )}
-
-            {guardado?.ActualizadoEn && (
-              <p className="text-xs text-muted-foreground">
-                Última actualización: {format(new Date(guardado.ActualizadoEn), "d MMM yyyy 'a las' HH:mm", { locale: es })}
-                {guardado.ActualizadoPor && ` · ${guardado.ActualizadoPor}`}
-              </p>
+              <CamposDatosPersonales valor={form} onCambio={setForm} disabled={guardando} enColumnas />
             )}
 
             {error && (
@@ -104,17 +118,24 @@ function DatosPersonalesTrabajador({ empleado }: { empleado: Empleado }) {
                 {error}
               </p>
             )}
-          </div>
+          </DialogBody>
 
-          <SheetFooter>
-            <Button type="submit" size="lg" disabled={guardando || cargando}>
+          <DialogFooter className="sm:items-center">
+            {guardado?.ActualizadoEn && (
+              <p className="text-xs text-muted-foreground sm:mr-auto">
+                Última actualización: {format(new Date(guardado.ActualizadoEn), "d MMM yyyy 'a las' HH:mm", { locale: es })}
+                {guardado.ActualizadoPor && ` · ${guardado.ActualizadoPor}`}
+              </p>
+            )}
+            <DialogClose render={<Button type="button" variant="ghost" />}>Cancelar</DialogClose>
+            <Button type="submit" disabled={guardando || cargando}>
               {guardando ? <Loader2Icon data-icon="inline-start" className="animate-spin" /> : <CheckIcon data-icon="inline-start" />}
               Guardar datos personales
             </Button>
-          </SheetFooter>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
 

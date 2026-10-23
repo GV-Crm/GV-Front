@@ -27,6 +27,7 @@ import CalendarioMensual from './CalendarioMensual'
 import DetalleDia from './DetalleDia'
 import DescargarReporte from './DescargarReporte'
 import JustificarFalta from './JustificarFalta'
+import PermisoSalida from './PermisoSalida'
 import ResumenEmpleado from './ResumenEmpleado'
 import VacacionesEmpleado from './VacacionesEmpleado'
 import { EstatusBadge } from './componentes'
@@ -160,6 +161,14 @@ function AsistenciaDetalle() {
     const vacacionesDelMes = datosMes?.vacaciones ?? []
     const hoyClave = datosMes?.hoy ?? claveFecha(new Date())
 
+    // Con un permiso de salida abierto hoy, se vuelve a pedir cada 15 s para que su checada aparezca sola.
+    const permisoActivo = dias.get(hoyClave)?.permisoSalida?.situacion === 'activo'
+    useEffect(() => {
+        if (!permisoActivo) return
+        const intervalo = setInterval(() => setVersion((v) => v + 1), 15_000)
+        return () => clearInterval(intervalo)
+    }, [permisoActivo])
+
     const irAMes = (nuevo: Date) => {
         // El calendario entra desde el lado hacia el que se navega.
         setDireccion(nuevo > mes ? 'derecha' : 'izquierda')
@@ -212,6 +221,9 @@ function AsistenciaDetalle() {
                             onCambio={() => setVersion((v) => v + 1)}
                         />
                     </SiPuede>
+                ) : diaSeleccionado?.fecha === hoyClave ? (
+                    // Solo hoy, si ya llegó y no ha salido (o si tiene un permiso abierto).
+                    <PermisoSalida uuid={uuid} dia={diaSeleccionado} onCambio={() => setVersion((v) => v + 1)} />
                 ) : undefined
             }
         />

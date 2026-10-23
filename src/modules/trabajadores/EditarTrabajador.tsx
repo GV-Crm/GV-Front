@@ -1,38 +1,46 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { CameraIcon, CheckIcon, Loader2Icon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { cn } from 'cn'
-import { editarTrabajador, quitarFotoTrabajador, subirFotoTrabajador } from './api'
-import type { Empleado } from '@/modules/asistencias/types'
+import { editarTrabajador, quitarFotoTrabajador, subirFotoTrabajador, type Area } from './api'
+import AsistenciaHoy from './AsistenciaHoy'
+import SelectorArea from './SelectorArea'
+import type { DiaCalendario, Empleado } from '@/modules/asistencias/types'
 import Avatar from '@/components/Avatar'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { prepararFotoDePerfil } from '@/lib/imagen'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 type Props = {
   empleado: Empleado
-  /** Áreas que ya existen, para sugerirlas al escribir. */
-  areas: string[]
+  /** Áreas del catálogo para elegir. */
+  areas: Area[]
+  /** Se llama si desde el panel se agrega un área nueva al catálogo. */
+  onAreaCreada: (area: Area) => void
   /** Se llama con el trabajador actualizado (al cambiar la foto o al guardar los datos). */
   onCambio: (empleado: Empleado) => void
+  /** Su asistencia de hoy, si se puede ver (permiso "ver Asistencia"). */
+  hoy?: DiaCalendario
 }
 
 /**
- * Botón de lápiz que abre un panel para editar el perfil de un trabajador.
+ * Botón de lápiz que abre una ventana centrada para editar el perfil de un trabajador.
  * Solo se muestra a quien tiene el permiso "editar Empleado" (ver TrabajadoresPage).
  * - La foto se guarda en cuanto se elige (igual que en Mi perfil).
  * - Nombre, área y fecha de ingreso se guardan con el botón "Guardar cambios".
  */
-function EditarTrabajador({ empleado, areas, onCambio }: Props) {
+function EditarTrabajador({ empleado, areas, onAreaCreada, onCambio, hoy }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [nombre, setNombre] = useState(empleado.Nombre)
   const [area, setArea] = useState(empleado.Area?.trim() ?? '')
@@ -98,20 +106,23 @@ function EditarTrabajador({ empleado, areas, onCambio }: Props) {
   }
 
   return (
-    <Sheet open={abierto} onOpenChange={cambiarAbierto}>
-      <SheetTrigger render={<Button variant="outline" size="icon" aria-label={`Editar a ${empleado.Nombre}`} title="Editar perfil" />}>
+    <Dialog open={abierto} onOpenChange={cambiarAbierto}>
+      <DialogTrigger render={<Button variant="outline" size="icon" aria-label={`Editar a ${empleado.Nombre}`} title="Editar perfil" />}>
         <PencilIcon />
-      </SheetTrigger>
+      </DialogTrigger>
 
-      <SheetContent className="w-full sm:max-w-md">
-        <form onSubmit={guardar} className="flex h-full flex-col">
-          <SheetHeader>
-            <SheetTitle>Editar trabajador</SheetTitle>
-            <SheetDescription>{empleado.Nombre}</SheetDescription>
-          </SheetHeader>
+      <DialogContent className="sm:max-w-2xl">
+        <form onSubmit={guardar} className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader>
+            <DialogTitle>Editar trabajador</DialogTitle>
+            <DialogDescription>{empleado.Nombre}</DialogDescription>
+          </DialogHeader>
 
-          <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4">
-            <div className="flex items-center gap-4">
+          <DialogBody className="grid content-start gap-5 sm:grid-cols-[13rem_1fr]">
+            {hoy && <AsistenciaHoy dia={hoy} className="rounded-lg border bg-muted/40 px-3 py-2 sm:col-span-2" />}
+
+            {/* Izquierda: la foto (se guarda en cuanto se elige). */}
+            <div className="flex flex-col items-center gap-3 self-start rounded-xl border bg-muted/30 p-4 text-center">
               <button
                 type="button"
                 onClick={() => entradaFoto.current?.click()}
@@ -119,7 +130,7 @@ function EditarTrabajador({ empleado, areas, onCambio }: Props) {
                 aria-label="Cambiar foto"
                 className="group relative rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <Avatar nombre={empleado.Nombre} foto={empleado.Foto} className={cn('size-20 text-2xl', COLOR_SECCION.personas.suave)} />
+                <Avatar nombre={empleado.Nombre} foto={empleado.Foto} className={cn('size-24 text-3xl', COLOR_SECCION.personas.suave)} />
                 <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100">
                   <CameraIcon className="size-5" />
                 </span>
@@ -129,7 +140,7 @@ function EditarTrabajador({ empleado, areas, onCambio }: Props) {
                   </span>
                 )}
               </button>
-              <div className="flex flex-col gap-2">
+              <div className="flex w-full flex-col gap-1.5">
                 <Button type="button" variant="outline" size="sm" disabled={subiendoFoto} onClick={() => entradaFoto.current?.click()}>
                   <CameraIcon data-icon="inline-start" />
                   {empleado.Foto ? 'Cambiar foto' : 'Subir foto'}
@@ -144,45 +155,42 @@ function EditarTrabajador({ empleado, areas, onCambio }: Props) {
               <input ref={entradaFoto} type="file" accept="image/*" className="sr-only" tabIndex={-1} onChange={alElegirFoto} />
             </div>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Nombre completo
-              <Input required maxLength={120} value={nombre} onChange={(e) => setNombre(e.target.value)} />
-            </label>
+            {/* Derecha: los datos que se guardan con "Guardar cambios". */}
+            <div className="flex flex-col gap-4">
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
+                Nombre completo
+                <Input required maxLength={120} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+              </label>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Área
-              <Input required maxLength={60} list={`areas-${empleado.Uuid}`} value={area} onChange={(e) => setArea(e.target.value)} />
-              <datalist id={`areas-${empleado.Uuid}`}>
-                {areas.map((a) => (
-                  <option key={a} value={a} />
-                ))}
-              </datalist>
-            </label>
+              <div className="flex flex-col gap-1.5 text-sm font-medium">
+                Área
+                <SelectorArea areas={areas} valor={area} onCambio={setArea} onAreaCreada={onAreaCreada} disabled={guardando} />
+              </div>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Fecha de ingreso
-              <Input type="date" required value={ingreso} onChange={(e) => setIngreso(e.target.value)} />
-              <span className="text-xs font-normal text-muted-foreground">
-                Cambiarla afecta desde cuándo se cuentan sus faltas.
-              </span>
-            </label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
+                Fecha de ingreso
+                <Input type="date" required value={ingreso} onChange={(e) => setIngreso(e.target.value)} />
+                <span className="text-xs font-normal text-muted-foreground">Cambiarla afecta desde cuándo se cuentan sus faltas.</span>
+              </label>
 
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
-          </div>
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+            </div>
+          </DialogBody>
 
-          <SheetFooter>
-            <Button type="submit" size="lg" disabled={guardando}>
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="ghost" />}>Cancelar</DialogClose>
+            <Button type="submit" disabled={guardando}>
               {guardando ? <Loader2Icon data-icon="inline-start" className="animate-spin" /> : <CheckIcon data-icon="inline-start" />}
               Guardar cambios
             </Button>
-          </SheetFooter>
+          </DialogFooter>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
 

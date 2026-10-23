@@ -53,6 +53,7 @@ export interface EmpleadoDetalle {
 export type EstadoDia =
   | 'asistio'
   | 'retardo'
+  | 'permiso'
   | 'sin_salida'
   | 'sin_entrada'
   | 'falta'
@@ -60,6 +61,17 @@ export type EstadoDia =
   | 'vacaciones'
   | 'pendiente'
   | 'descanso'
+
+/** Permiso para salir antes: abre 10 min (autorizadoEn → venceEn) para que cheque su salida. */
+export interface PermisoSalida {
+  id: number
+  autorizadoEn: string
+  venceEn: string
+  motivo: string | null
+  autorizadoPor: string | null
+  /** usado: checó dentro de la ventana · activo: todavía puede checar · vencido: pasaron los 10 min sin checar. */
+  situacion: 'usado' | 'activo' | 'vencido'
+}
 
 /**
  * Solicitud de vacaciones. `Fechas` son los días exactos (laborables), que pueden ser salteados;
@@ -94,6 +106,8 @@ export interface DiaCalendario {
   minutosExtra: number
   /** Periodo de vacaciones que incluye este día, o null. */
   vacaciones: PeriodoVacaciones | null
+  /** Permiso de salida del día (el que usó, o el último que se le dio), o null. */
+  permisoSalida: PermisoSalida | null
 }
 
 export interface TotalesCalendario {
@@ -101,6 +115,7 @@ export interface TotalesCalendario {
   retardos: number
   faltas: number
   vacaciones: number
+  permisos: number
   minutosExtra: number
 }
 
@@ -110,6 +125,8 @@ export interface EmpleadoCalendario {
   Nombre: string
   Area: string
   Ingreso: string | null
+  /** URL de su foto, o null si se muestran sus iniciales. */
+  Foto: string | null
   PinChecador: number
   totales: TotalesCalendario
   /** Periodos de vacaciones que tocan el rango pedido, aunque sean futuros (vacaciones programadas). */

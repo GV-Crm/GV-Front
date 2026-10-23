@@ -27,8 +27,12 @@ import TrabajadoresPage from '@/modules/trabajadores/TrabajadoresPage'
  *
  * Para agregar un módulo nuevo:
  *   1. Crea su carpeta en src/modules/ con su página.
- *   2. Agrégalo a esta lista con el permiso que necesita.
+ *   2. Agrégalo a esta lista con el permiso que necesita y su sección del menú.
  */
+
+/** Secciones del menú lateral, en el orden en que se ven. Una sección sin módulos permitidos no se muestra. */
+export const SECCIONES = ['Personal', 'Almacén', 'Administración', 'Mi cuenta'] as const
+export type Seccion = (typeof SECCIONES)[number]
 
 export type Modulo = {
   /** Texto en el menú. */
@@ -36,6 +40,8 @@ export type Modulo = {
   /** Dirección base, p. ej. '/asistencias'. Las sub-rutas las maneja la página del módulo. */
   ruta: string
   icono: LucideIcon
+  /** Grupo del menú lateral en el que aparece. */
+  seccion: Seccion
   pagina: ComponentType
   /**
    * Lo que se necesita para verlo. Sin permiso = lo ve cualquier usuario con sesión.
@@ -51,6 +57,7 @@ export const MODULOS: Modulo[] = [
     nombre: 'Asistencias',
     ruta: '/asistencias',
     icono: CalendarCheck,
+    seccion: 'Personal',
     pagina: AsistenciasModulo,
     permiso: { accion: 'ver', recurso: 'Asistencia' },
   },
@@ -58,6 +65,7 @@ export const MODULOS: Modulo[] = [
     nombre: 'Trabajadores',
     ruta: '/trabajadores',
     icono: UserCogIcon,
+    seccion: 'Personal',
     pagina: TrabajadoresPage,
     // Entra quien da de alta/baja o quien solo edita perfiles.
     permiso: [
@@ -66,23 +74,18 @@ export const MODULOS: Modulo[] = [
     ],
   },
   {
-    nombre: 'Permisos',
-    ruta: '/permisos',
-    icono: ShieldCheckIcon,
-    pagina: PermisosPage,
-    permiso: { accion: 'gestionar', recurso: 'Permiso' },
-  },
-  {
-    nombre: 'Checador',
-    ruta: '/checador',
-    icono: ScanFaceIcon,
-    pagina: ChecadorPage,
-    permiso: { accion: 'gestionar', recurso: 'Checador' },
+    nombre: 'Inventario',
+    ruta: '/inventario',
+    icono: Package,
+    seccion: 'Almacén',
+    pagina: InventarioPage,
+    permiso: { accion: 'ver', recurso: 'Inventario' },
   },
   {
     nombre: 'Empresa',
     ruta: '/empresa',
     icono: Building2Icon,
+    seccion: 'Administración',
     pagina: EmpresaPage,
     permiso: [
       { accion: 'ver', recurso: 'Empresa' },
@@ -90,21 +93,35 @@ export const MODULOS: Modulo[] = [
     ],
   },
   {
-    nombre: 'Inventario',
-    ruta: '/inventario',
-    icono: Package,
-    pagina: InventarioPage,
-    permiso: { accion: 'ver', recurso: 'Inventario' },
+    nombre: 'Checador',
+    ruta: '/checador',
+    icono: ScanFaceIcon,
+    seccion: 'Administración',
+    pagina: ChecadorPage,
+    permiso: { accion: 'gestionar', recurso: 'Checador' },
+  },
+  {
+    nombre: 'Permisos',
+    ruta: '/permisos',
+    icono: ShieldCheckIcon,
+    seccion: 'Administración',
+    pagina: PermisosPage,
+    // Quien solo cambia contraseñas entra a ver las cuentas.
+    permiso: [
+      { accion: 'gestionar', recurso: 'Permiso' },
+      { accion: 'cambiar', recurso: 'Contrasena' },
+    ],
   },
   {
     nombre: 'Mi perfil',
     ruta: '/perfil',
     icono: UserRoundIcon,
+    seccion: 'Mi cuenta',
     pagina: PerfilPage,
   },
 ]
 
-/** Los módulos que el usuario actual puede abrir. */
+/** Los módulos que el usuario actual puede abrir (el primero es el de inicio). */
 export function useModulosPermitidos(): Modulo[] {
   const ability = useAbility<AppAbility>()
   return MODULOS.filter((modulo) => {

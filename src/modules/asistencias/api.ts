@@ -37,6 +37,19 @@ export function quitarVacaciones(id: number): Promise<unknown> {
   return pedirJson(`/api/vacaciones/${id}`, { method: 'DELETE' })
 }
 
+/**
+ * Da permiso para salir antes: abre 10 minutos para que cheque su salida. Solo hoy, si ya llegó.
+ * Requiere "autorizar Salida".
+ */
+export function darPermisoSalida(uuid: string, motivo?: string): Promise<{ id: number; VenceEn: string }> {
+  return pedirJson('/api/permisos-salida', { method: 'POST', body: { uuid, motivo } })
+}
+
+/** Cancela un permiso de salida que todavía no se usa. Requiere "autorizar Salida". */
+export function cancelarPermisoSalida(id: number): Promise<unknown> {
+  return pedirJson(`/api/permisos-salida/${id}`, { method: 'DELETE' })
+}
+
 /** Requiere el permiso "justificar Falta". Para justificar, `motivo` es obligatorio. */
 export function justificarFalta(uuid: string, fecha: string, justificada: boolean, motivo?: string): Promise<unknown> {
   return pedirJson('/api/faltas/justificar', { method: 'POST', body: { uuid, fecha, justificada, motivo } })

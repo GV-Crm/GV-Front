@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { Loader2Icon, UserPlusIcon } from 'lucide-react'
-import { crearCuenta, type Cuenta } from './api'
+import { Loader2Icon, UndoIcon, UserPlusIcon } from 'lucide-react'
+import { crearCuenta, MIN_CONTRASENA, type Cuenta } from './api'
+import CampoContrasena from './CampoContrasena'
 import { CLASES_SELECT } from './estilos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,12 +15,22 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 
-/** Botón "Nueva cuenta" que abre un panel lateral para dar acceso a alguien. */
-function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: Cuenta) => void }) {
+const NUEVO = '__nuevo__'
+
+/**
+ * Botón "Nueva cuenta" que abre un panel lateral para dar acceso a alguien.
+ * El área (rol) se elige de las que ya existen o se escribe una nueva: se crea con la cuenta, sin permisos.
+ */
+type Props = { roles: string[]; onCreada: (cuenta: Cuenta, usaContrasenaExistente: boolean) => void }
+
+function NuevaCuenta({ roles, onCreada }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
   const [rol, setRol] = useState('')
+  // true = se escribe el nombre de un área nueva en vez de elegirla.
+  const [rolNuevo, setRolNuevo] = useState(false)
+  const [contrasena, setContrasena] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,6 +40,8 @@ function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: 
       setNombre('')
       setCorreo('')
       setRol('')
+      setRolNuevo(false)
+      setContrasena('')
       setError(null)
     }
   }
@@ -38,7 +51,13 @@ function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: 
     setEnviando(true)
     setError(null)
     try {
-      onCreada(await crearCuenta({ Nombre: nombre.trim(), Correo: correo.trim(), Rol: rol }))
+      const { usaContrasenaExistente, ...cuenta } = await crearCuenta({
+        Nombre: nombre.trim(),
+        Correo: correo.trim(),
+        Rol: rol.trim(),
+        Contrasena: contrasena,
+      })
+      onCreada(cuenta, usaContrasenaExistente)
       cambiarAbierto(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la cuenta')
@@ -59,8 +78,8 @@ function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: 
           <SheetHeader>
             <SheetTitle>Nueva cuenta</SheetTitle>
             <SheetDescription>
-              Da acceso al sistema con un rol. La persona también debe tener su usuario creado en Supabase
-              (Authentication → Users) con el mismo correo.
+              Da acceso al sistema con un rol. La persona inicia sesión con su correo y la contraseña inicial que
+              pongas aquí.
             </SheetDescription>
           </SheetHeader>
 
@@ -75,19 +94,72 @@ function NuevaCuenta({ roles, onCreada }: { roles: string[]; onCreada: (cuenta: 
               <Input type="email" required value={correo} onChange={(e) => setCorreo(e.target.value)} />
             </label>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              Rol
-              <select required className={CLASES_SELECT} value={rol} onChange={(e) => setRol(e.target.value)}>
-                <option value="" disabled>
-                  Elige un rol
-                </option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
+            <div className="flex flex-col gap-1.5 text-sm font-medium">
+              <label htmlFor="rol-cuenta">Área / rol</label>
+              {rolNuevo ? (
+                <div className="flex gap-2">
+                  <Input
+                    id="rol-cuenta"
+                    required
+                    autoFocus
+                    minLength={2}
+                    maxLength={40}
+                    placeholder="Ej. Recursos Humanos"
+                    value={rol}
+                    onChange={(e) => setRol(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Elegir un área que ya existe"
+                    title="Elegir un área que ya existe"
+                    onClick={() => {
+                      setRolNuevo(false)
+                      setRol('')
+                    }}
+                  >
+                    <UndoIcon />
+                  </Button>
+                </div>
+              ) : (
+                <select
+                  id="rol-cuenta"
+                  required
+                  className={CLASES_SELECT}
+                  value={rol}
+                  onChange={(e) => {
+                    if (e.target.value === NUEVO) {
+                      setRolNuevo(true)
+                      setRol('')
+                    } else setRol(e.target.value)
+                  }}
+                >
+                  <option value="" disabled>
+                    Elige un área
                   </option>
-                ))}
-              </select>
-            </label>
+                  {roles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                  <option value={NUEVO}>＋ Crear nueva área…</option>
+                </select>
+              )}
+              <span className="text-xs font-normal text-muted-foreground">
+                {rolNuevo
+                  ? 'Se crea sin permisos: después marca lo que puede hacer en "Roles y permisos".'
+                  : 'El área decide qué puede ver y hacer en la plataforma.'}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <CampoContrasena etiqueta="Contraseña inicial" valor={contrasena} onCambio={setContrasena} />
+              <p className="text-xs text-muted-foreground">
+                Mínimo {MIN_CONTRASENA} caracteres. Después la puede cambiar quien tenga el permiso "Cambiar la contraseña de
+                las cuentas".
+              </p>
+            </div>
 
             {error && (
               <p role="alert" className="text-sm text-destructive">

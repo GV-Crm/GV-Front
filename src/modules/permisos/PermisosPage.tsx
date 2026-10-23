@@ -7,6 +7,7 @@ import Desplegable from '@/components/Desplegable'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
 import Segmentos from '@/components/Segmentos'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
+import { usePuede } from '@/auth/permisos'
 
 const VISTAS = [
   { id: 'roles', nombre: 'Roles y permisos', icono: ShieldCheckIcon },
@@ -45,9 +46,14 @@ function ComoFunciona() {
   )
 }
 
-/** Módulo Permisos: requiere el permiso "gestionar Permiso" (Admin y Admin Legal). */
+/**
+ * Módulo Permisos: con "gestionar Permiso" se ven roles y cuentas. Con solo "cambiar Contrasena" se ven
+ * únicamente las cuentas, para cambiarles la contraseña.
+ */
 function PermisosPage() {
-  const [vista, setVista] = useState<Vista>('roles')
+  const gestionaPermisos = usePuede('gestionar', 'Permiso')
+  const [vistaElegida, setVista] = useState<Vista>('roles')
+  const vista: Vista = gestionaPermisos ? vistaElegida : 'cuentas'
 
   return (
     <div className="flex flex-col gap-6">
@@ -60,7 +66,9 @@ function PermisosPage() {
         <ComoFunciona />
       </Desplegable>
 
-      <Segmentos etiqueta="Sección" opciones={VISTAS} valor={vista} onCambio={setVista} className="w-full sm:w-fit" />
+      {gestionaPermisos && (
+        <Segmentos etiqueta="Sección" opciones={VISTAS} valor={vista} onCambio={setVista} className="w-full sm:w-fit" />
+      )}
 
       {vista === 'roles' ? <PermisosPorRol /> : <CuentasLista />}
     </div>

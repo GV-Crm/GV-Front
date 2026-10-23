@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { PlusIcon, Trash2Icon } from 'lucide-react'
+import { BanknoteIcon, ContactIcon, IdCardIcon, PlusIcon, SirenIcon, Trash2Icon, type LucideIcon } from 'lucide-react'
+import { cn } from 'cn'
 import type { ContactoEmergencia } from './api'
 import { CONTACTO_VACIO, MAX_CONTACTOS, type FormDatosPersonales } from './datosPersonales'
 import { Button } from '@/components/ui/button'
@@ -9,11 +10,15 @@ type Props = {
   valor: FormDatosPersonales
   onCambio: (valor: FormDatosPersonales) => void
   disabled?: boolean
+  /** En una ventana ancha: cada sección es una tarjeta con sus campos en dos columnas. */
+  enColumnas?: boolean
 }
 
-function Campo({ etiqueta, ayuda, children }: { etiqueta: string; ayuda?: string; children: ReactNode }) {
+type PropsCampo = { etiqueta: string; ayuda?: string; children: ReactNode; className?: string }
+
+function Campo({ etiqueta, ayuda, children, className }: PropsCampo) {
   return (
-    <label className="flex flex-col gap-1.5 text-sm font-medium">
+    <label className={cn('flex flex-col gap-1.5 text-sm font-medium', className)}>
       {etiqueta}
       {children}
       {ayuda && <span className="text-xs font-normal text-muted-foreground">{ayuda}</span>}
@@ -21,11 +26,24 @@ function Campo({ etiqueta, ayuda, children }: { etiqueta: string; ayuda?: string
   )
 }
 
-function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
+type PropsSeccion = { titulo: string; icono: LucideIcon; enColumnas?: boolean; children: ReactNode }
+
+function Seccion({ titulo, icono: Icono, enColumnas, children }: PropsSeccion) {
+  if (!enColumnas) {
+    return (
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{titulo}</legend>
+        {children}
+      </fieldset>
+    )
+  }
   return (
-    <fieldset className="flex flex-col gap-4">
-      <legend className="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{titulo}</legend>
-      {children}
+    <fieldset className="rounded-xl border bg-card p-4">
+      <legend className="flex items-center gap-1.5 px-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <Icono className="size-3.5" />
+        {titulo}
+      </legend>
+      <div className="grid gap-4 md:grid-cols-2">{children}</div>
     </fieldset>
   )
 }
@@ -34,7 +52,7 @@ function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) 
  * Campos de datos personales de un trabajador. Se usa en el alta (FormularioTrabajador)
  * y en el panel de información personal (DatosPersonalesTrabajador). Todo es opcional.
  */
-function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
+function CamposDatosPersonales({ valor, onCambio, disabled, enColumnas = false }: Props) {
   const cambiar = <K extends keyof FormDatosPersonales>(campo: K, nuevo: FormDatosPersonales[K]) =>
     onCambio({ ...valor, [campo]: nuevo })
 
@@ -43,8 +61,8 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
     cambiar('ContactosEmergencia', contactos.map((c, j) => (j === i ? { ...c, [campo]: nuevo } : c)))
 
   return (
-    <fieldset disabled={disabled} className="flex flex-col gap-6">
-      <Seccion titulo="Identificación">
+    <fieldset disabled={disabled} className={cn('flex flex-col', enColumnas ? 'gap-4' : 'gap-6')}>
+      <Seccion titulo="Identificación" icono={IdCardIcon} enColumnas={enColumnas}>
         <Campo etiqueta="Fecha de nacimiento">
           <Input type="date" value={valor.FechaNacimiento} onChange={(e) => cambiar('FechaNacimiento', e.target.value)} />
         </Campo>
@@ -80,14 +98,14 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
         </Campo>
       </Seccion>
 
-      <Seccion titulo="Contacto">
+      <Seccion titulo="Contacto" icono={ContactIcon} enColumnas={enColumnas}>
         <Campo etiqueta="Celular" ayuda="10 dígitos.">
           <Input type="tel" inputMode="tel" autoComplete="off" value={valor.Celular} onChange={(e) => cambiar('Celular', e.target.value)} />
         </Campo>
         <Campo etiqueta="Correo personal">
           <Input type="email" autoComplete="off" maxLength={120} value={valor.Correo} onChange={(e) => cambiar('Correo', e.target.value)} />
         </Campo>
-        <Campo etiqueta="Domicilio" ayuda="Calle y número, colonia, código postal, municipio y estado.">
+        <Campo etiqueta="Domicilio" ayuda="Calle y número, colonia, código postal, municipio y estado." className="md:col-span-2">
           <textarea
             rows={3}
             maxLength={300}
@@ -98,7 +116,7 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
         </Campo>
       </Seccion>
 
-      <Seccion titulo="Nómina">
+      <Seccion titulo="Nómina" icono={BanknoteIcon} enColumnas={enColumnas}>
         <Campo etiqueta="Salario diario (pesos)" ayuda="Con él se calcula la prima vacacional en pesos.">
           <Input
             type="number"
@@ -112,8 +130,8 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
         </Campo>
       </Seccion>
 
-      <Seccion titulo="Contactos de emergencia">
-        {contactos.length === 0 && <p className="text-sm text-muted-foreground">Sin contactos de emergencia.</p>}
+      <Seccion titulo="Contactos de emergencia" icono={SirenIcon} enColumnas={enColumnas}>
+        {contactos.length === 0 && <p className="text-sm text-muted-foreground md:col-span-2">Sin contactos de emergencia.</p>}
 
         {contactos.map((contacto, i) => (
           <div key={i} className="flex flex-col gap-3 rounded-lg border p-3">
@@ -152,7 +170,7 @@ function CamposDatosPersonales({ valor, onCambio, disabled }: Props) {
           <Button
             type="button"
             variant="outline"
-            className="self-start"
+            className="self-start justify-self-start md:col-span-2"
             onClick={() => cambiar('ContactosEmergencia', [...contactos, { ...CONTACTO_VACIO }])}
           >
             <PlusIcon data-icon="inline-start" />

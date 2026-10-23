@@ -5,66 +5,53 @@ import { es } from 'date-fns/locale'
 import { CalendarCheck, ChevronRightIcon, SearchIcon, SunIcon, UsersIcon } from 'lucide-react'
 import { cn } from 'cn'
 import { getCalendario, getEmpleados } from './api'
-import type { Empleado, EstadoDia } from './types'
+import type { Empleado, EmpleadoCalendario } from './types'
 import DescargarReporte from './DescargarReporte'
 import { EstadoBadge, EstatusBadge } from './componentes'
-import { ESTADOS } from './estados'
+import PanelDeHoy from './PanelDeHoy'
 import Avatar from '@/components/Avatar'
-import Cifra from '@/components/Cifra'
 import Ayuda from '@/components/Ayuda'
-import Desplegable from '@/components/Desplegable'
 import EncabezadoPagina from '@/components/EncabezadoPagina'
-import { ELEVAR_AL_PASAR, ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
+import { ENTRADA, retrasoEscalonado } from '@/lib/animaciones'
 import { COLOR_SECCION } from '@/lib/colores-seccion'
 import { sinAcentos } from '@/lib/texto'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// Después de las 9:00, quien no ha llegado ya cuenta como falta.
-const RESUMEN_HOY: EstadoDia[] = ['asistio', 'retardo', 'sin_salida', 'pendiente', 'falta', 'vacaciones']
-
-/** Tarjetas con cuántos empleados hay hoy en cada estado. */
-function TarjetasDeHoy({ estadoHoy }: { estadoHoy: Map<string, EstadoDia> }) {
-    return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            {RESUMEN_HOY.map((estado, i) => {
-                const estilo = ESTADOS[estado]
-                const total = [...estadoHoy.values()].filter((e) => e === estado).length
-                return (
-                    <div
-                        key={estado}
-                        style={retrasoEscalonado(i)}
-                        className={cn('flex items-center gap-3 rounded-xl border bg-card p-3 sm:p-4', ENTRADA, ELEVAR_AL_PASAR)}
-                    >
-                        {/* Todas las tarjetas del resumen usan el color de su sección (ver src/lib/colores-seccion.ts). */}
-                        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', COLOR_SECCION.indicadores.suave)}>
-                            <estilo.icono className="size-5" />
-                        </span>
-                        <div className="min-w-0">
-                            <p><Cifra valor={total} className="text-3xl" /></p>
-                            <p className="truncate text-xs font-medium">{estilo.etiqueta}</p>
-                        </div>
-                    </div>
-                )
-            })}
-        </div>
-    )
-}
-
 function AsistenciasHome() {
     const [empleados, setEmpleados] = useState<Empleado[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(false)
-    const [estadoHoy, setEstadoHoy] = useState<Map<string, EstadoDia> | null>(null)
+    // Calendario de hoy de los trabajadores activos (para el panel y el estado de cada uno en la lista).
+    const [hoy, setHoy] = useState<EmpleadoCalendario[] | null>(null)
     const [busqueda, setBusqueda] = useState('')
 
-    useEffect(() => {
-        // Es complementario: si falla, la lista se muestra igual, solo sin el estado de hoy.
+    const pedirHoy = useCallback(() => {
+        // Es complementario: si falla, la lista se muestra igual, solo sin el panel de hoy.
         getCalendario()
-            .then((c) => setEstadoHoy(new Map(c.empleados.flatMap((e) => (e.dias[0] ? [[e.Uuid, e.dias[0].estado] as const] : [])))))
+            .then((c) => setHoy(c.empleados))
             .catch((err) => console.error('Error al obtener el estado de hoy:', err))
     }, [])
+
+    useEffect(pedirHoy, [pedirHoy])
+
+    // Mientras alguien tenga un permiso de salida abierto, se vuelve a pedir cada 15 s
+    // para que su checada aparezca sola como "Salió con permiso".
+    const hayPermisoActivo = useMemo(
+        () => Boolean(hoy?.some((e) => e.dias[0]?.permisoSalida?.situacion === 'activo')),
+        [hoy],
+    )
+    useEffect(() => {
+        if (!hayPermisoActivo) return
+        const intervalo = setInterval(pedirHoy, 15_000)
+        return () => clearInterval(intervalo)
+    }, [hayPermisoActivo, pedirHoy])
+
+    const estadoHoy = useMemo(
+        () => (hoy ? new Map(hoy.flatMap((e) => (e.dias[0] ? [[e.Uuid, e.dias[0].estado] as const] : []))) : null),
+        [hoy],
+    )
 
     const pedirEmpleados = useCallback(() => {
         getEmpleados()
@@ -92,12 +79,6 @@ function AsistenciasHome() {
             .sort((a, b) => Number(b.Activo) - Number(a.Activo) || a.Nombre.localeCompare(b.Nombre))
     }, [empleados, busqueda])
 
-    const resumenCorto =
-        estadoHoy &&
-        RESUMEN_HOY.map((estado) => `${[...estadoHoy.values()].filter((e) => e === estado).length} ${ESTADOS[estado].etiqueta.toLowerCase()}`)
-            .slice(0, 2)
-            .join(' · ')
-
     return (
         <div className="flex flex-1 flex-col gap-6 sm:gap-8">
             <EncabezadoPagina
@@ -108,17 +89,18 @@ function AsistenciasHome() {
                 }
             />
 
-            {estadoHoy && (
+            {hoy && (
                 <section className="space-y-3">
-                    <h2 className="hidden items-center gap-2 text-base font-semibold sm:flex">
+                    <h2 className="flex items-center gap-2 text-base font-semibold">
                         <SunIcon className={cn('size-4', COLOR_SECCION.indicadores.texto)} />
                         <span className="first-letter:uppercase">Hoy, {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}</span>
-                        <Ayuda>Cuántos empleados activos hay hoy en cada situación. Se actualiza al abrir esta pantalla.</Ayuda>
+                        <Ayuda>
+                            Cómo va el día de los trabajadores activos: quién llegó, quién llegó tarde (después de las 8:15), quién
+                            faltó (sin registros, o llegó después de las 9:00) y quién no ha llegado. Se actualiza al abrir esta
+                            pantalla. Toca a alguien para ver su calendario.
+                        </Ayuda>
                     </h2>
-                    {/* En el celular las tarjetas quedan dentro de un panel que se despliega. */}
-                    <Desplegable titulo="Resumen de hoy" icono={SunIcon} resumen={resumenCorto} soloEnMovil>
-                        <TarjetasDeHoy estadoHoy={estadoHoy} />
-                    </Desplegable>
+                    <PanelDeHoy empleados={hoy} onCambio={pedirHoy} />
                 </section>
             )}
 
@@ -166,7 +148,7 @@ function AsistenciasHome() {
                 ) : (
                     <ul className="divide-y overflow-hidden rounded-xl border bg-card">
                         {visibles.map((e, i) => {
-                            const hoy = estadoHoy?.get(e.Uuid)
+                            const estadoDeHoy = estadoHoy?.get(e.Uuid)
                             return (
                                 <li key={e.Uuid} style={retrasoEscalonado(i)} className={ENTRADA}>
                                     <Link
@@ -184,7 +166,7 @@ function AsistenciasHome() {
                                             </div>
                                             <p className="truncate text-xs text-muted-foreground">{e.Area?.trim() || 'Sin área'}</p>
                                         </div>
-                                        {hoy && <EstadoBadge estado={hoy} soloIconoEnMovil color={COLOR_SECCION.personas.suave} />}
+                                        {estadoDeHoy && <EstadoBadge estado={estadoDeHoy} soloIconoEnMovil />}
                                         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-foreground" />
                                     </Link>
                                 </li>

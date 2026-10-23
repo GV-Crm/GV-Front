@@ -3,6 +3,23 @@ import type { Empleado } from '@/modules/asistencias/types'
 
 export type NuevoTrabajador = { Nombre: string; Area: string; Ingreso: string }
 
+/** Área del catálogo y cuántos trabajadores activos tiene. */
+export type Area = { id: number; Nombre: string; trabajadores: number }
+
+export function getAreas(): Promise<Area[]> {
+  return pedirJson('/api/areas')
+}
+
+/** Agrega un área al catálogo. Requiere "gestionar Empleado" o "editar Empleado". */
+export function crearArea(nombre: string): Promise<Area> {
+  return pedirJson('/api/areas', { method: 'POST', body: { Nombre: nombre } })
+}
+
+/** Quita un área que ningún trabajador tiene. Requiere "gestionar Empleado". */
+export function quitarArea(id: number): Promise<unknown> {
+  return pedirJson(`/api/areas/${id}`, { method: 'DELETE' })
+}
+
 export type ContactoEmergencia = { Nombre: string; Parentesco: string; Telefono: string }
 
 /** Datos sensibles: solo los ve quien tiene el permiso "gestionar DatosPersonales". Los vacíos llegan como null. */
