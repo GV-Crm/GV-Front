@@ -7,9 +7,11 @@ import {
     CalendarCheckIcon,
     CalendarDaysIcon,
     ChartPieIcon,
+    ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     ClipboardListIcon,
+    ClockIcon,
     MousePointerClickIcon,
     PaletteIcon,
     PalmtreeIcon,
@@ -26,6 +28,7 @@ import type { DiaCalendario, EmpleadoDetalle, PeriodoVacaciones } from './types'
 import CalendarioMensual from './CalendarioMensual'
 import DetalleDia from './DetalleDia'
 import DescargarReporte from './DescargarReporte'
+import HorasTrabajadas from './HorasTrabajadas'
 import JustificarFalta from './JustificarFalta'
 import PermisoSalida from './PermisoSalida'
 import ResumenEmpleado from './ResumenEmpleado'
@@ -38,13 +41,27 @@ import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { Skeleton } from '@/components/ui/skeleton'
 
-type Vista = 'calendario' | 'resumen' | 'vacaciones'
+type Vista = 'calendario' | 'horas' | 'resumen' | 'vacaciones'
 
 const VISTAS = [
     { id: 'calendario', nombre: 'Calendario', icono: CalendarDaysIcon },
+    { id: 'horas', nombre: 'Horas', icono: ClockIcon },
     { id: 'resumen', nombre: 'Resumen', icono: ChartPieIcon },
     { id: 'vacaciones', nombre: 'Vacaciones', icono: PalmtreeIcon },
 ] as const
+
+/** Sin fecha de ingreso, el selector de mes muestra hasta este número de meses atrás. */
+const MESES_ATRAS_SIN_INGRESO = 24
+
+/** Los meses que se pueden elegir, del más reciente al más antiguo: "Octubre 2026", "Septiembre 2026"… */
+function mesesParaElegir(desde: Date, hasta: Date) {
+    const meses: { clave: string; nombre: string }[] = []
+    for (let m = hasta; m >= desde; m = sumarMeses(m, -1)) {
+        const nombre = format(m, 'LLLL yyyy', { locale: es })
+        meses.push({ clave: claveFecha(m), nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1) })
+    }
+    return meses
+}
 
 function inicioDeMes(fecha: Date) {
     return new Date(fecha.getFullYear(), fecha.getMonth(), 1)
@@ -114,8 +131,10 @@ function AsistenciaDetalle() {
     const [mesCargado, setMesCargado] = useState<MesCargado | null>(null)
     const [seleccionado, setSeleccionado] = useState<string | null>(() => claveFecha(new Date()))
     const [detalleAbierto, setDetalleAbierto] = useState(false)
-    // Se incrementa tras justificar una falta para volver a pedir los datos.
+    // Se incrementa tras justificar una falta o registrar vacaciones para volver a pedir los datos.
     const [version, setVersion] = useState(0)
+    // Solo vuelve a pedir el calendario (permiso de salida, actualización automática): no reinicia las otras pestañas.
+    const [refresco, setRefresco] = useState(0)
 
     useEffect(() => {
         if (!uuid) return
@@ -145,7 +164,7 @@ function AsistenciaDetalle() {
         return () => {
             vigente = false
         }
-    }, [uuid, mes, claveMes, version])
+    }, [uuid, mes, claveMes, version, refresco])
 
     // Al recargar el mismo mes (tras justificar) se siguen mostrando los datos anteriores, sin parpadeo.
     const cargandoMes = mesCargado?.mes !== claveMes
@@ -165,7 +184,7 @@ function AsistenciaDetalle() {
     const permisoActivo = dias.get(hoyClave)?.permisoSalida?.situacion === 'activo'
     useEffect(() => {
         if (!permisoActivo) return
-        const intervalo = setInterval(() => setVersion((v) => v + 1), 15_000)
+        const intervalo = setInterval(() => setRefresco((v) => v + 1), 15_000)
         return () => clearInterval(intervalo)
     }, [permisoActivo])
 
@@ -223,7 +242,7 @@ function AsistenciaDetalle() {
                     </SiPuede>
                 ) : diaSeleccionado?.fecha === hoyClave ? (
                     // Solo hoy, si ya llegó y no ha salido (o si tiene un permiso abierto).
-                    <PermisoSalida uuid={uuid} dia={diaSeleccionado} onCambio={() => setVersion((v) => v + 1)} />
+                    <PermisoSalida uuid={uuid} dia={diaSeleccionado} onCambio={() => setRefresco((v) => v + 1)} />
                 ) : undefined
             }
         />
@@ -290,12 +309,30 @@ function AsistenciaDetalle() {
                     >
                         <ChevronLeftIcon />
                     </Button>
-                    <span
-                        key={claveMes}
-                        className={cn('flex-1 text-center text-sm font-semibold first-letter:uppercase sm:min-w-32', ENTRADA)}
-                    >
-                        {format(mes, 'LLLL yyyy', { locale: es })}
-                    </span>
+                    {/* El nombre del mes es un selector: se puede saltar directo a cualquier mes. */}
+                    <label className="relative flex flex-1 items-center sm:min-w-40">
+                        <span className="sr-only">Elegir mes</span>
+                        <select
+                            key={claveMes}
+                            title="Elegir mes"
+                            value={claveMes}
+                            onChange={(e) => irAMes(fechaDesdeClave(e.target.value))}
+                            className={cn(
+                                'h-8 w-full cursor-pointer appearance-none rounded-md bg-transparent px-6 text-center text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50',
+                                ENTRADA,
+                            )}
+                        >
+                            {mesesParaElegir(
+                                mesIngreso ?? sumarMeses(mesActual, -MESES_ATRAS_SIN_INGRESO),
+                                sumarMeses(mesActual, MESES_A_FUTURO),
+                            ).map((m) => (
+                                <option key={m.clave} value={m.clave}>
+                                    {m.nombre}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDownIcon className="pointer-events-none absolute right-1.5 size-3.5 text-muted-foreground" />
+                    </label>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -329,6 +366,8 @@ function AsistenciaDetalle() {
                 <div className="rounded-xl border border-dashed px-6 py-16 text-center text-sm text-muted-foreground">
                     No se pudo cargar este mes. Revisa tu conexión e inténtalo de nuevo.
                 </div>
+            ) : vista === 'horas' ? (
+                <HorasTrabajadas mes={mes} dias={listaDias} cargando={cargandoMes} />
             ) : vista === 'resumen' ? (
                 <ResumenEmpleado mes={mes} dias={listaDias} cargando={cargandoMes} asistencias={empleado.Asistencias} />
             ) : (

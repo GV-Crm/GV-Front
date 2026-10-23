@@ -9,10 +9,16 @@ export function vacacionProgramada(vacaciones: PeriodoVacaciones[], fecha: strin
 }
 
 /** Días laborables (lunes a sábado) entre dos fechas `YYYY-MM-DD`, incluidas. */
+const FECHA_VALIDA = /^\d{4}-\d{2}-\d{2}$/
+/** Tope para no congelar la pantalla con un rango absurdo (p. ej. mientras se escribe el año a mano). */
+const MAX_DIAS_RANGO = 3660
+
 export function diasLaborablesEntre(desde: string, hasta: string): string[] {
   const dias: string[] = []
-  if (!desde || !hasta || desde > hasta) return dias
-  for (let dia = fechaDesdeClave(desde); claveFecha(dia) <= hasta; dia.setDate(dia.getDate() + 1)) {
+  if (!FECHA_VALIDA.test(desde) || !FECHA_VALIDA.test(hasta) || desde > hasta) return dias
+  let vueltas = 0
+  for (let dia = fechaDesdeClave(desde); claveFecha(dia) <= hasta && vueltas < MAX_DIAS_RANGO; dia.setDate(dia.getDate() + 1)) {
+    vueltas++
     if (dia.getDay() !== 0) dias.push(claveFecha(dia))
   }
   return dias
@@ -80,6 +86,28 @@ export function horasDelDia(dia: DiaCalendario | undefined) {
     finComida: primera('FinComida'),
     salida: dia?.salida ?? null,
   }
+}
+
+/**
+ * Tiempo trabajado de un día, en minutos. null si no tiene entrada y salida.
+ * - jornada: de la entrada a la salida normal, sin la comida.
+ * - comida: entre las dos primeras checadas que hay entre la entrada y la salida (salió a comer y regresó).
+ * - extra: el tiempo extra que calculó el backend. total = jornada + extra.
+ */
+export function minutosTrabajados(dia: DiaCalendario) {
+  if (!dia.entrada || !dia.salida) return null
+  const entrada = Date.parse(dia.entrada)
+  const salida = Date.parse(dia.salida)
+  if (!(salida > entrada)) return null
+  const intermedias = dia.checadas.map(Date.parse).filter((ms) => ms > entrada && ms < salida)
+  const comida = intermedias.length >= 2 ? Math.floor((intermedias[1] - intermedias[0]) / 60_000) : 0
+  const jornada = Math.floor((salida - entrada) / 60_000) - comida
+  return { jornada, comida, extra: dia.minutosExtra, total: jornada + dia.minutosExtra }
+}
+
+/** "8:30" (horas:minutos) para tablas y totales. */
+export function formatHorasMinutos(minutos: number) {
+  return `${Math.floor(minutos / 60)}:${String(minutos % 60).padStart(2, '0')}`
 }
 
 /** "1 h 45 min", "2 h", "35 min", "0 min" */
