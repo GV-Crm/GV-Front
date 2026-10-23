@@ -96,7 +96,7 @@ function AsistenciasHome() {
                         <span className="first-letter:uppercase">Hoy, {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}</span>
                         <Ayuda>
                             Cómo va el día de los trabajadores activos: quién llegó, quién llegó tarde (después de las 8:15), quién
-                            faltó (sin registros, o llegó después de las 9:00) y quién no ha llegado. Se actualiza al abrir esta
+                            faltó (sin registros, o llegó después de las 8:30) y quién no ha llegado. Se actualiza al abrir esta
                             pantalla. Toca a alguien para ver su calendario.
                         </Ayuda>
                     </h2>

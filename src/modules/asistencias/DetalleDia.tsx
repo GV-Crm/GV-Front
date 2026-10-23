@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from 'cn'
 import { EstadoBadge } from './componentes'
-import { ESTADOS } from './estados'
+import { ESTADOS, MINUTOS_PARA_FALTA } from './estados'
 import { describirFechas, fechaDesdeClave, formatDuracion, formatHora, horasDelDia } from './formatHora'
 import type { DiaCalendario, PeriodoVacaciones } from './types'
 import { ENTRADA } from '@/lib/animaciones'
@@ -155,7 +155,7 @@ function DetalleDia({ fecha, dia, accion, programada }: Props) {
           <p>
             Llegó <span className="font-semibold">{formatDuracion(dia.minutosTarde)}</span> tarde.{' '}
             <span className="text-muted-foreground">
-              {dia.minutosTarde > 60 ? 'Después de las 9:00 cuenta como falta.' : 'Después de las 8:15 es retardo.'}
+              {dia.minutosTarde > MINUTOS_PARA_FALTA ? 'Después de las 8:30 cuenta como falta.' : 'Después de las 8:15 es retardo.'}
             </span>
           </p>
         </div>

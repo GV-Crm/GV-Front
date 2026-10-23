@@ -99,7 +99,7 @@ export interface DiaCalendario {
   checadas: string[]
   /** Minutos después de las 8:00 (0 si llegó a tiempo). */
   minutosTarde: number
-  /** Llegó después de las 8:15. Si además fue después de las 9:00, el día es falta. */
+  /** Llegó después de las 8:15. Si además fue después de las 8:30, el día es falta. */
   retardo: boolean
   /** Tiempo extra: desde que volvió a checar después de las 18:10 (sábado 14:10). `fin` null = sin cerrar. */
   extra: { inicio: string; fin: string | null } | null

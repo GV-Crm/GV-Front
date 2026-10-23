@@ -51,7 +51,7 @@ function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
   const faltas = cuenta('falta')
   const evaluados = asistencias + incompletos + faltas
   const porcentaje = evaluados ? Math.round(((asistencias + incompletos) / evaluados) * 100) : null
-  // Un retardo que llegó a falta (después de las 9:00) ya se cuenta como falta.
+  // Un retardo que llegó a falta (después de las 8:30) ya se cuenta como falta.
   const retardos = dias.filter((d) => d.retardo && d.estado !== 'falta' && d.estado !== 'justificada').length
   const minutosExtra = dias.reduce((total, d) => total + d.minutosExtra, 0)
   const diasConExtra = dias.filter((d) => d.minutosExtra > 0).length
@@ -67,7 +67,7 @@ function kpisDelMes(dias: DiaCalendario[]): Kpi[] {
     {
       titulo: 'Retardos',
       valor: String(retardos),
-      detalle: 'Llegó después de las 8:15 (y antes de las 9:00)',
+      detalle: 'Llegó después de las 8:15 (y antes de las 8:30)',
       icono: AlarmClockIcon,
       color: COLOR_SECCION.indicadores.suave,
     },
